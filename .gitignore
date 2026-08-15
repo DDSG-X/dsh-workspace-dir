@@ -2,3 +2,4 @@ node_modules/
 *.log
 .DS_Store
 交接文档.md
+交接日志.md
