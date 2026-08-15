@@ -134,7 +134,7 @@ export function DirectoryToggle(_props: DirectoryToggleProps): React.ReactElemen
 
 /** The draggable floating directory panel in shell.overlay. */
 export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement | null {
-  const { useSessions, listDirectory } = props
+  const { useSessions, listDirectory, openDirectory } = props
   const open = useSyncExternalStoreSafe(panelStore.subscribe, panelStore.get)
   const currentId = useSessions((s: SessionListState) => s.current)
   const byId = useSessions((s: SessionListState) => s.byId ?? {})
@@ -143,15 +143,24 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   const [path, setPath] = useState<string | undefined>(undefined)
   const [entries, setEntries] = useState<DirEntryJson[] | undefined>(undefined)
   const [error, setError] = useState<string | undefined>(undefined)
+  const [openError, setOpenError] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [pos, setPos] = useState(DEFAULT_POS)
   const [opacity, setOpacity] = useState(panelOpacity)
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null)
 
   // Reset navigation when the session's working directory changes.
-  useEffect(() => { setPath(undefined); setError(undefined) }, [cwd])
+  useEffect(() => { setPath(undefined); setError(undefined); setOpenError(undefined) }, [cwd])
 
   const visible = path ?? cwd
+
+  /** Open a directory in the OS file manager; surface failures inline. */
+  const onOpenDirectory = (target: string): void => {
+    setOpenError(undefined)
+    openDirectory(target).catch((reason: unknown) => {
+      setOpenError(reason instanceof Error ? reason.message : String(reason))
+    })
+  }
 
   // Re-list whenever the visible directory changes while open.
   useEffect(() => {
@@ -194,6 +203,22 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   // Child rows are indented under the current-directory line so entries read
   // as nested, not sibling.
   const childRow: React.CSSProperties = { ...row, paddingLeft: '22px' }
+  const openBtn: React.CSSProperties = {
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '20px',
+    padding: '0 4px',
+    borderRadius: '4px',
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    color: T.labelDim,
+    fontFamily: FONT,
+    fontSize: '11px',
+    lineHeight: '18px',
+  }
   const panelBg = `color-mix(in srgb, ${T.bg} ${Math.round(opacity * 100)}%, transparent)`
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
@@ -281,7 +306,21 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
           <span style={{ flexShrink: 0, display: 'inline-flex' }}><FolderIcon size={14} /></span>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{basenameOf(visible)}</span>
           <span style={{ color: T.labelDim, overflow: 'hidden', textOverflow: 'ellipsis' }}>{visible}</span>
+          <span style={{ flex: 1 }} />
+          <button
+            type="button"
+            title="在文件管理器中打开当前文件夹"
+            aria-label="在文件管理器中打开"
+            onClick={() => { if (visible !== undefined) onOpenDirectory(visible) }}
+            style={openBtn}
+          >
+            ↗
+          </button>
         </div>
+
+        {openError !== undefined && (
+          <div style={{ ...childRow, cursor: 'default', color: T.error }}>⚠ {openError}</div>
+        )}
 
         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: '4px', paddingTop: '4px' }}>
           {loading && (
@@ -309,6 +348,19 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
                 >
                   <span style={{ flexShrink: 0, display: 'inline-flex' }}><FolderIcon size={14} /></span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.name}</span>
+                  <span style={{ flex: 1 }} />
+                  <button
+                    type="button"
+                    title="在文件管理器中打开此文件夹"
+                    aria-label="在文件管理器中打开"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (visible !== undefined) onOpenDirectory(joinPath(visible, entry.name))
+                    }}
+                    style={openBtn}
+                  >
+                    ↗
+                  </button>
                 </div>
               ))}
               {files.map(entry => (

@@ -12,7 +12,7 @@
  * (`conversation.session.header.actions`) opens a draggable floating panel in
  * `shell.overlay` with an adjustable background opacity.
  */
-import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, IWorkspaces } from '@deepseek-ai/dsh-client-runtime/client'
 // Type-only: pulls the SlotMap merges declaring the header-actions and overlay holes.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
@@ -51,10 +51,19 @@ export async function listDirectoryViaHost(path: string, signal?: AbortSignal): 
   return body
 }
 
+/** Open one directory in the OS file manager through the official host.openPath hand-off. */
+export async function openDirectoryViaWorkspaces(ctx: ClientContext, path: string): Promise<void> {
+  const workspaces = ctx.get('workspaces') as IWorkspaces | undefined
+  if (workspaces === undefined) throw new Error('workspaces 服务不可用')
+  await workspaces.openPath(path)
+}
+
 /** The business share this plugin injects into its panel component. */
 export interface DirectoryPanelInjected {
   /** List one directory level (absolute path); the signal aborts a superseded scan. */
   listDirectory: (path: string, signal?: AbortSignal) => Promise<ListResultJson>
+  /** Open a directory in the OS file manager (Explorer / Finder / xdg-open). */
+  openDirectory: (path: string) => Promise<void>
 }
 
 /** Full composed props of the panel component: framework share + injected share. */
@@ -89,6 +98,7 @@ export function apply(ctx: ClientContext): void {
       order: 10,
       inject: (): DirectoryPanelInjected => ({
         listDirectory: (path, signal) => listDirectoryViaHost(path, signal),
+        openDirectory: (path) => openDirectoryViaWorkspaces(ctx, path),
       }),
     },
     DirectoryPanel,

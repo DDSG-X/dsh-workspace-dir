@@ -234,6 +234,20 @@ Chinese path, migrate to an English directory before continuing.
   initialized to `panelOpacity`, and the slider `onChange` writes `panelOpacity` back. Do not use
   a component-local `useState(0.9)` (it resets every time).
 
+### 6. Opening a folder in the OS file manager: use the official `host.openPath`
+
+- Client-side `ctx.workspaces.openPath(<absolute path>)` → Host `host.openPath`:
+  Windows uses `Invoke-Item` (Explorer), macOS `open`, desktop Linux `xdg-open`,
+  and WSL translates via `wslpath -w` before handing the Windows path to
+  `Invoke-Item`.
+- Headless/container Linux is judged unreachable by `canOpenPath` and the call
+  rejects — the panel shows the error inline; no button-hiding logic needed.
+- **Do not** roll your own `explorer`/`open`/`xdg-open` through the shell
+  service: platform differences, WSL path translation, and sandbox policy are
+  all handled by the official opener.
+- Client type: `IWorkspaces` is exported from `@deepseek-ai/dsh-client-runtime/client`;
+  get it via `ctx.get('workspaces')` (optional service — null-check it).
+
 ## After you finish
 
 - Report to the user: install succeeded, where the "目录" button appears, and

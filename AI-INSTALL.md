@@ -191,6 +191,18 @@ pnpm install
 - 实现:`panelOpacity` 为模块级变量(初始 `0.2`),state 初始化为 `panelOpacity`,
   滑杆 `onChange` 同步写回 `panelOpacity`。不要用组件内 `useState(0.9)`(会每次重置)。
 
+### 6. 打开系统文件夹:用官方 `host.openPath`,不要自己拼命令
+
+- 客户端 `ctx.workspaces.openPath(<绝对路径>)` → Host 侧 `host.openPath`:
+  Windows 用 `Invoke-Item`(资源管理器)、macOS `open`、桌面 Linux `xdg-open`,
+  WSL 自动 `wslpath -w` 转成 Windows 路径再交给 `Invoke-Item`。
+- 无头/容器 Linux 会被 `canOpenPath` 判定不可达并 reject——面板把错误内联显示,
+  不需要隐藏按钮逻辑。
+- **不要**自己用 shell 服务拼 `explorer`/`open`/`xdg-open`:平台差异、WSL 路径转换、
+  沙箱策略都容易出错,官方 opener 全部处理好了。
+- 客户端类型:`IWorkspaces` 从 `@deepseek-ai/dsh-client-runtime/client` 导出,
+  用 `ctx.get('workspaces')` 获取(可选服务,判空)。
+
 ## 完成后
 
 - 向用户报告:安装成功、在哪里看到了"目录"按钮、如何卸载;
