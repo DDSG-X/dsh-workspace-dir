@@ -332,7 +332,8 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     maxWidth: '300px',
     padding: '8px 12px',
     borderRadius: '8px',
-    background: T.bg,
+    // Same translucent background as the panel, so the toast reads as part of the plugin.
+    background: panelBg,
     border: `1px solid ${T.border}`,
     boxShadow: '0 6px 24px rgba(0,0,0,0.2)',
     color: T.label,
