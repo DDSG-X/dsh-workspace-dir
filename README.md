@@ -25,7 +25,9 @@ DeepSeek Harness 插件:查看**当前对话的工作目录**及其文件列表�
 
    > 请读取本项目的 `AI-INSTALL.md`,按里面的步骤把 `dsh-workspace-dir` 插件安装到我的 harness,并验证"目录"按钮能正常弹出面板。
 
-AI 会自动完成环境检测、构建、profile 配置、重启验证。安装过程遇到任何环境差异,AI 也会按引导里的故障排查表处理。
+AI 会自动完成环境检测、profile 配置、重启验证。安装过程遇到任何环境差异,AI 也会按引导里的故障排查表处理。
+
+> 本仓库**自带构建产物**(`lib/`),克隆后无需构建,可直接安装。只有修改源码的开发者才需要重新构建。
 
 ### AI 安装效果示例
 
@@ -37,29 +39,25 @@ AI 会自动完成环境检测、构建、profile 配置、重启验证。安装
 
 AI:
   ✅ 第 1 步 检测环境
-     → 发现源码 checkout: D:/Software/deepseek-harness
-     → 发现 web profile: C:/Users/junre/.dsh/profiles/web
+     → 发现 harness 源码 checkout
+     → 发现 web profile(已初始化)
 
-  ✅ 第 2 步 构建插件
-     → pnpm install 完成,peer 依赖解析 OK
-     → pnpm build 完成,lib/index.js + lib/client.js 已生成
-
-  ✅ 第 3 步 安装到 web profile
-     → 在 package.json 添加依赖 dsh-workspace-dir
+  ✅ 第 2 步 安装插件到 web profile
+     → dsh plugin add 本地路径 完成(依赖已写入 profile package.json)
      → 在 cordis.patch.yml 注册 workspace-dir 行
      → pnpm install 完成
 
-  ✅ 第 4 步 重启 harness 并验证
+  ✅ 第 3 步 重启 harness 并验证
      → 重启完成,端口 3080 就绪
      → 会话标题旁出现"目录"按钮
-     → 点击弹出目录面板,显示 D:/Projects/插件 的文件列表
+     → 点击弹出目录面板,显示当前工作目录的文件列表
      → 拖动/透明度/关闭均正常
 
   安装成功!使用方式:打开任意会话 → 点标题旁"目录"按钮。
   卸载:告诉我,或按 AI-INSTALL.md 的卸载章节操作。
 ```
 
-> AI 的语言、命令风格可能不同,但流程一致:检测 → 构建 → 安装 → 重启验证 → 汇报。
+> AI 的语言、命令风格可能不同,但流程一致:检测 → 安装 → 重启验证 → 汇报。
 > 若某一步失败,引导要求 AI 把错误信息带回来,你可以原样转发给维护者。
 
 > **English**: an English version of the AI install guide is at
@@ -68,15 +66,10 @@ AI:
 
 ## 安装(手动,给想自己动手的人)
 
-> 本插件依赖 DeepSeek Harness 的**源码运行环境**。推荐先按官方 README 从源码运行 harness:
->
-> ```sh
-> git clone https://github.com/deepseek-ai/deepseek-harness.git
-> cd deepseek-harness
-> pnpm install
-> pnpm run build
-> pnpm dsh web
-> ```
+> 本插件是 **out-of-tree 插件**:依赖 profile 的 hoisted linker,缺失的 peer
+> 依赖(`@deepseek-ai/*`、`react` 等)在运行时由 harness 安装提供,不需要也不
+> 应该从 npm 单独安装。profile 的 `pnpm-workspace.yaml` 由 `dsh` 自动生成,已
+> 含 `nodeLinker: hoisted` 与 `autoInstallPeers: false`。
 
 ### 第 1 步:克隆插件仓库
 
@@ -85,26 +78,20 @@ git clone https://github.com/DDSG-X/dsh-workspace-dir.git
 cd dsh-workspace-dir
 ```
 
-### 第 2 步:构建插件
+仓库已包含构建产物 `lib/`(宿主半 `lib/index.js` + 浏览器半 `lib/client.js`),无需构建。
+
+### 第 2 步:安装到你的 web profile
+
+用 harness 的插件管理命令添加依赖(自动写入 profile 的 `package.json`):
 
 ```sh
-pnpm install
-pnpm build
+# 用绝对路径指向克隆下来的插件目录;Windows 示例:
+dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir
 ```
 
-构建产物生成在 `lib/`(`lib/index.js` 宿主半 + `lib/client.js` 浏览器半)。
-
-### 第 3 步:安装到你的 harness
-
-把插件加进 web profile(编辑 `~/.dsh/profiles/web/package.json` 的 `dependencies`):
-
-```json
-{
-  "dependencies": {
-    "dsh-workspace-dir": "file:D:/绝对路径/dsh-workspace-dir"
-  }
-}
-```
+> 没有 `dsh` 命令?也可以手动编辑 `~/.dsh/profiles/web/package.json`,在
+> `dependencies` 里加 `"dsh-workspace-dir": "file:D:/绝对路径/dsh-workspace-dir"`,
+> 然后在 profile 目录执行 `pnpm install`。
 
 在 `~/.dsh/profiles/web/cordis.patch.yml` 中注册插件行:
 
@@ -114,16 +101,9 @@ pnpm build
       name: dsh-workspace-dir
 ```
 
-然后在 profile 目录执行:
+> `dsh plugin add` 只管理依赖,不会写 `cordis.patch.yml`,这行必须手动加。
 
-```sh
-cd ~/.dsh/profiles/web
-pnpm install
-```
-
-> **注意**:源码运行环境下,插件的 peer 依赖(`@deepseek-ai/cordis` 等)必须能解析到 harness 源码仓库的版本。若 `pnpm install` 报版本找不到,把插件项目目录放进 harness 的 `packages/extensions/` 下作为 workspace 成员(peer 用 `workspace:^`),再在 harness 根目录 `pnpm install`。
-
-### 第 4 步:重启 harness
+### 第 3 步:重启 harness
 
 重启 `dsh web`(或双击你的启动器)。重启后:
 
@@ -135,23 +115,28 @@ pnpm install
 | 现象 | 原因 | 解决 |
 | --- | --- | --- |
 | 按钮/面板不出现 | 插件未加载 | 检查 profile 的 package.json 依赖和 cordis.patch.yml 是否都配好 |
-| `pnpm install` 版本报错 | peer 依赖解析不到 | 按上面"注意"改为 harness workspace 成员 |
-| 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码重新构建 |
+| 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(重新构建或重新克隆) |
 | 面板文字不可见 | 旧版用错主题变量 | 更新代码(`--dsw-alias-*` 已修复) |
 
 ## 卸载
 
 1. 从 `~/.dsh/profiles/web/cordis.patch.yml` 删除 `workspace-dir` 行;
-2. 从 `~/.dsh/profiles/web/package.json` 删除依赖;
+2. 从 profile 移除依赖:`dsh plugin --profile web remove dsh-workspace-dir`
+   (或手动从 `~/.dsh/profiles/web/package.json` 删除依赖后 `pnpm install`);
 3. 重启 harness。
 
 ## 开发
 
 ```sh
-pnpm build      # 构建 lib/index.js(Host)+ lib/client.js(Client)
-pnpm typecheck  # 仅类型检查
-pnpm watch      # 监听源码变更并重新构建
+pnpm install   # 只安装构建工具(tsdown、react 类型等),不会拉 @deepseek-ai peer
+pnpm build     # 构建 lib/index.js(Host)+ lib/client.js(Client)
+pnpm watch     # 监听源码变更并重新构建
 ```
+
+> 类型检查(`tsc`)需要 `@deepseek-ai/*` 的类型包,它们只存在于 harness 源码
+> 仓库(部分为 vendored),不发布到 npm;如需类型检查,把本仓库作为 harness
+> workspace 成员(`packages/extensions/`)并在 harness 根目录 `pnpm install`
+> 后再跑 `tsc --noEmit`。
 
 ### 项目结构
 
@@ -161,7 +146,9 @@ src/
   client/
     index.ts            # Client 半:注册"目录"按钮 + 浮动面板插槽
     DirectoryPanel.tsx   # DirectoryToggle(按钮)+ DirectoryPanel(可拖动/透明度/缩进树)
+lib/                    # 构建产物(入库,克隆即用)
 tsdown.config.ts         # 独立构建配置(不依赖 monorepo)
+pnpm-workspace.yaml      # 独立仓库设置:autoInstallPeers: false
 ```
 
 ## 原理
