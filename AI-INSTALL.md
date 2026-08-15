@@ -79,6 +79,9 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
    并自动注册为 profile bundle)。**推荐 github 源,一条命令装完即激活**:
 
 ```sh
+# dsh 在 PATH 时直接运行;源码运行 harness 时 dsh 不在 PATH,
+# 需在 harness 源码目录(第 1 步记下的 HARNESS_SRC)用 pnpm 调用:
+#   cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
@@ -347,6 +350,9 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
    **Prefer the github source — one command, activated immediately**:
 
 ```sh
+# Run dsh directly when it is on PATH; for a source-checkout harness dsh is
+# not on PATH — call it via pnpm in the harness source dir (HARNESS_SRC from
+# Step 1):  cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 

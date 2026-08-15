@@ -146,15 +146,19 @@ dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 
 ### 终端命令速查(安装 / 更新 / 卸载)
 
+> 源码运行的 harness,`dsh` 是工作区脚本而非全局命令,**先在 harness 源码目录用
+> `pnpm dsh` 调用**(如 `cd D:/Software/deepseek-harness`);若你的 `dsh` 在
+> PATH 中(全局安装版),可直接去掉 `pnpm` 前缀。
+
 ```sh
 # 安装(首次,一条命令装完即激活)
-dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 
 # 更新(拉取仓库最新代码并触发 reconcile)
-dsh plugin --profile web update dsh-workspace-dir
+pnpm dsh plugin --profile web update dsh-workspace-dir
 
 # 卸载(同时移除依赖和 dsh.profile.bundles 里的 bundle 层)
-dsh plugin --profile web remove dsh-workspace-dir
+pnpm dsh plugin --profile web remove dsh-workspace-dir
 
 # 快速验证(Host 半路由是否加载;返回 JSON 文件列表即正常)
 curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"
