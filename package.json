@@ -1,7 +1,7 @@
 {
   "name": "dsh-workspace-dir",
   "version": "0.1.0",
-  "description": "DeepSeek Harness plugin: shows the current conversation's working directory and its file listing under the composer.",
+  "description": "DeepSeek Harness plugin: show the current conversation's working directory in a draggable directory panel with adjustable opacity.",
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
