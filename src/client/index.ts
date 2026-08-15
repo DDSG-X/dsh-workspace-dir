@@ -1,18 +1,23 @@
 /**
  * dsh-workspace-dir — show the current conversation's working directory and
- * its file listing inside the web composer dock.
+ * its file listing in a draggable directory panel.
  *
  * Client half: reads the session cwd from the sessions list snapshot, then
  * fetches the Host half's JSON route (`/dsh-workspace-dir/list`) for a full
  * file+directory listing. The workspaces service's own `listDirectory` only
  * works when the composed picker serves the `browse` capability, which is not
  * guaranteed — this plugin owns its listing channel instead.
+ *
+ * UI: a "目录" toggle button in the session header action row
+ * (`conversation.session.header.actions`) opens a draggable floating panel in
+ * `shell.overlay` with an adjustable background opacity.
  */
 import type { ClientContext } from '@deepseek-ai/dsh-client-runtime/client'
-// Type-only: pulls the SlotMap merge declaring the composer.dock hole.
+// Type-only: pulls the SlotMap merges declaring the header-actions and overlay holes.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import { WorkspaceDirDock } from './WorkspaceDirDock.tsx'
+import { DirectoryPanel, DirectoryToggle } from './DirectoryPanel.tsx'
 
 /** Route pathname the Host half registers (keep in sync with src/index.ts). */
 export const LIST_ROUTE = '/dsh-workspace-dir/list'
@@ -46,36 +51,48 @@ export async function listDirectoryViaHost(path: string, signal?: AbortSignal): 
   return body
 }
 
+/** The business share this plugin injects into its panel component. */
+export interface DirectoryPanelInjected {
+  /** List one directory level (absolute path); the signal aborts a superseded scan. */
+  listDirectory: (path: string, signal?: AbortSignal) => Promise<ListResultJson>
+}
+
+/** Full composed props of the panel component: framework share + injected share. */
+export type DirectoryPanelProps = PropsRuntime<'shell.overlay'> & DirectoryPanelInjected
+
+/** Full composed props of the header toggle button. */
+export type DirectoryToggleProps = PropsRuntime<'conversation.session.header.actions'>
+
 /**
- * Client plugin body: register the dock entry through `slots.inject()` because
- * the ui-conversation entry may activate later or replace its declaration.
+ * Client plugin body: register the header toggle and the overlay panel through
+ * `slots.inject()` because the declaring entries may activate later.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
   const slots = ctx.get('slots')
   if (slots === undefined) return
 
-  slots.inject('conversation.composer.dock', () => slots.register(
+  slots.inject('conversation.session.header.actions', () => slots.register(
     {
-      name: 'conversation.composer.dock',
-      id: 'workspace-dir',
-      // Sit after the shipped stats line (order 0).
+      name: 'conversation.session.header.actions',
+      id: 'workspace-dir-toggle',
+      // After the shipped session actions (agent-preset -10, subagent-catalog 10, job-list 20).
+      order: 30,
+    },
+    DirectoryToggle,
+  ))
+
+  slots.inject('shell.overlay', () => slots.register(
+    {
+      name: 'shell.overlay',
+      id: 'workspace-dir-panel',
       order: 10,
-      inject: (): WorkspaceDirInjected => ({
+      inject: (): DirectoryPanelInjected => ({
         listDirectory: (path, signal) => listDirectoryViaHost(path, signal),
       }),
     },
-    WorkspaceDirDock,
+    DirectoryPanel,
   ))
 }
 
-/** The business share this plugin injects into its dock component. */
-export interface WorkspaceDirInjected {
-  /** List one directory level (absolute path); the signal aborts a superseded scan. */
-  listDirectory: (path: string, signal?: AbortSignal) => Promise<ListResultJson>
-}
-
-/** Full composed props of the dock component: framework share + injected share. */
-export type WorkspaceDirDockProps = PropsRuntime<'conversation.composer.dock'> & WorkspaceDirInjected
-
-export { WorkspaceDirDock }
+export { DirectoryPanel, DirectoryToggle }
