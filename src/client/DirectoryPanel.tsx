@@ -206,6 +206,8 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   /** Transient note after a successful OS-file-manager open (Windows may not raise the window). */
   const [openNote, setOpenNote] = useState<string | undefined>(undefined)
   const openNoteTimerRef = useRef<number | undefined>(undefined)
+  /** Drives the toast's fade/slide-in transition (off on mount, on next frame). */
+  const [toastIn, setToastIn] = useState(false)
   /** Hovered / pressed interactive element key (feedback state). */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const [activeKey, setActiveKey] = useState<string | null>(null)
@@ -224,6 +226,13 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     if (openNoteTimerRef.current !== undefined) window.clearTimeout(openNoteTimerRef.current)
   }, [])
 
+  // Animate the toast in on the frame after it appears (transition needs a state flip).
+  useEffect(() => {
+    if (openNote === undefined) { setToastIn(false); return }
+    const raf = requestAnimationFrame(() => setToastIn(true))
+    return () => cancelAnimationFrame(raf)
+  }, [openNote])
+
   const visible = path ?? cwd
 
   /** Open a directory in the OS file manager; surface failures inline. */
@@ -233,7 +242,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     openDirectory(target).then(() => {
       setOpenNote('已在文件管理器中打开；若窗口未置前，请点任务栏图标')
       if (openNoteTimerRef.current !== undefined) window.clearTimeout(openNoteTimerRef.current)
-      openNoteTimerRef.current = window.setTimeout(() => setOpenNote(undefined), 4000)
+      openNoteTimerRef.current = window.setTimeout(() => setOpenNote(undefined), 5000)
     }).catch((reason: unknown) => {
       setOpenError(reason instanceof Error ? reason.message : String(reason))
     })
@@ -324,18 +333,23 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     lineHeight: '18px',
   }
   const panelBg = `color-mix(in srgb, ${T.bg} ${Math.round(opacity * 100)}%, transparent)`
-  /** Toast-bubble note shown after a successful OS-file-manager open (the window may not come to front). */
+  /**
+   * Toast-bubble note shown after a successful OS-file-manager open (the window
+   * may not come to front). Anchors beside the panel (right edge, following its
+   * dragged position) so it appears where the user is looking; a solid-ish
+   * background and a fade/slide-in make it stand out while keeping the panel's
+   * border/radius/font so it still reads as the same plugin.
+   */
   const toastStyle: React.CSSProperties = {
     position: 'fixed',
-    right: '16px',
-    bottom: '16px',
-    maxWidth: '300px',
+    left: `${pos.x + PANEL_WIDTH + 8}px`,
+    top: `${pos.y + 8}px`,
+    maxWidth: '280px',
     padding: '8px 12px',
     borderRadius: '8px',
-    // Same translucent background as the panel, so the toast reads as part of the plugin.
-    background: panelBg,
+    background: `color-mix(in srgb, ${T.bg} 85%, transparent)`,
     border: `1px solid ${T.border}`,
-    boxShadow: '0 6px 24px rgba(0,0,0,0.2)',
+    boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
     color: T.label,
     fontFamily: FONT,
     fontSize: '12px',
@@ -343,6 +357,9 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     whiteSpace: 'normal',
     zIndex: 1100,
     pointerEvents: 'none',
+    opacity: toastIn ? 1 : 0,
+    transform: toastIn ? 'none' : 'translateY(6px)',
+    transition: 'opacity 160ms ease, transform 160ms ease',
   }
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
@@ -539,7 +556,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
       </div>
     </div>
     {openNote !== undefined && (
-      <div role="status" style={toastStyle}>ℹ {openNote}</div>
+      <div role="status" style={toastStyle}>✅ {openNote}</div>
     )}
     </>
   )
