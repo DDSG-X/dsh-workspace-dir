@@ -119,27 +119,28 @@ cd dsh-workspace-dir
 并把插件注册为 profile bundle)。**推荐用 github 源,一条命令装完即激活**:
 
 ```sh
-dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+# 源码运行 harness:dsh 不在 PATH,需在 harness 源码目录用 pnpm 调用
+pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
 > ⚠️ 本插件**未发布到 npm**——不要用包名安装(如 `dsh plugin add dsh-workspace-dir`
 > 或 `npm install dsh-workspace-dir` 会失败)。github 源安装直接拉取本仓库;
 > 离线/本地开发场景才改用 `file:` 指向本地克隆目录:
-> `dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir`。
+> `pnpm dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir`。
 
 > 本插件是 **bundle 形态**:`package.json` 声明了 `dsh.bundle.patch`(指向仓库自带的
-> `cordis.patch.yml`)。`dsh plugin add` 装完依赖后会自动 reconcile,把插件写进
+> `cordis.patch.yml`)。`pnpm dsh plugin add` 装完依赖后会自动 reconcile,把插件写进
 > profile 的 `dsh.profile.bundles`——**不需要**再手动编辑 `cordis.patch.yml`。
 
 > 没有 `dsh` 命令?也可以手动编辑 `~/.dsh/profiles/web/package.json`,在
 > `dependencies` 里加 `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"`,
 > 然后在 profile 目录执行 `pnpm install`,最后执行
-> `dsh plugin --profile web install` 触发 reconcile(或手动把
+> `pnpm dsh plugin --profile web install` 触发 reconcile(或手动把
 > `dsh-workspace-dir` 加进 profile `package.json` 的 `dsh.profile.bundles`)。
 
 ### 第 3 步:重启 harness
 
-重启 `dsh web`(或双击你的启动器)。重启后:
+重启 `pnpm dsh web`(在 harness 源码目录;或双击你的启动器)。重启后:
 
 - 打开任意会话 → 标题旁出现 **"目录"** 按钮
 - 点击弹出目录面板;拖动标题栏移动;滑杆调透明度;`✕` 关闭
@@ -167,10 +168,10 @@ curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"
 ### 更新插件
 
 ```sh
-dsh plugin --profile web update dsh-workspace-dir
+pnpm dsh plugin --profile web update dsh-workspace-dir
 ```
 
-github 源安装的依赖,`dsh plugin update` 会拉取仓库最新代码并触发 reconcile
+github 源安装的依赖,`pnpm dsh plugin update` 会拉取仓库最新代码并触发 reconcile
 (仓库自带构建产物 `lib/`,无需重新构建)。若当初是用 `file:` 本地路径装的,
 则改为在克隆目录 `git pull` 后重启 harness 生效。
 
@@ -181,12 +182,12 @@ github 源安装的依赖,`dsh plugin update` 会拉取仓库最新代码并触�
 | 按钮/面板不出现 | 插件未加载 | 检查 profile 的 package.json 依赖和 `dsh.profile.bundles` 是否都配好 |
 | harness 启动报 `duplicate loader entry id: workspace-dir` | 手动 patch 行与 bundle 层重复插入同一 id | 删除 profile `cordis.patch.yml` 里的手动 `workspace-dir` 行(bundle 形态会自动注册,手动行会与 bundle 层冲突) |
 | 安装时报 peer 依赖版本找不到 | harness 是 npm 安装版 | 改用源码运行的 harness(见手动安装节说明) |
-| 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(`dsh plugin --profile web update dsh-workspace-dir`,或本地克隆 `git pull` + 重启) |
+| 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(`pnpm dsh plugin --profile web update dsh-workspace-dir`,或本地克隆 `git pull` + 重启) |
 | 面板文字不可见 | 旧版用错主题变量 | 更新代码(`--dsw-alias-*` 已修复) |
 
 ## 卸载
 
-1. 从 profile 移除依赖:`dsh plugin --profile web remove dsh-workspace-dir`
+1. 从 profile 移除依赖:`pnpm dsh plugin --profile web remove dsh-workspace-dir`
    —— 一条命令会同时移除依赖和 `dsh.profile.bundles` 里的 bundle 层;
 2. 重启 harness。
 

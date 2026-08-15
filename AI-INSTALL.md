@@ -79,18 +79,17 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
    并自动注册为 profile bundle)。**推荐 github 源,一条命令装完即激活**:
 
 ```sh
-# dsh 在 PATH 时直接运行;源码运行 harness 时 dsh 不在 PATH,
-# 需在 harness 源码目录(第 1 步记下的 HARNESS_SRC)用 pnpm 调用:
-#   cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
-dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+# 源码运行 harness 时 dsh 不在 PATH,需在 harness 源码目录(HARNESS_SRC)调用:
+cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+# (若 dsh 在 PATH,直接: dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir)
 ```
 
 > 离线/本地开发时才用 `file:` 指向本地克隆:
-> `dsh plugin --profile web add file:<本仓库绝对路径>`。
-> 若 `dsh plugin` 不可用(命令不存在/报错),退回手动方式:
+> `pnpm dsh plugin --profile web add file:<本仓库绝对路径>`。
+> 若 `pnpm dsh plugin` 不可用(命令不存在/报错),退回手动方式:
 > 编辑 `~/.dsh/profiles/web/package.json`,在 `dependencies` 加
 > `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"`,然后在 profile 目录 `pnpm install`,
-> 最后执行 `dsh plugin --profile web install` 触发 reconcile(或手动把
+> 最后执行 `pnpm dsh plugin --profile web install` 触发 reconcile(或手动把
 > `dsh-workspace-dir` 加进 profile `package.json` 的 `dsh.profile.bundles`)。
 
 > ⚠️ **不要**再往 profile 的 `cordis.patch.yml` 手动加 `workspace-dir` 行:
@@ -135,7 +134,7 @@ dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 
 ## 卸载
 
-1. `dsh plugin --profile web remove dsh-workspace-dir`
+1. `pnpm dsh plugin --profile web remove dsh-workspace-dir`
    —— 一条命令同时移除依赖和 `dsh.profile.bundles` 里的 bundle 层
    (或手动从 profile 的 `package.json` 删除依赖后 `pnpm install`,再手动把
    `dsh-workspace-dir` 从 `dsh.profile.bundles` 移除);
@@ -181,13 +180,13 @@ dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 
 - **改了源码记得重新构建并提交 `lib/`**(本仓库把构建产物入库,克隆即用)。
 
-### 4. 安装/更新：官方 `dsh plugin` + github 源，不要维护本地安装源
+### 4. 安装/更新：官方 `pnpm dsh plugin` + github 源，不要维护本地安装源
 
-- 安装/更新一律用 harness 官方命令 + **github 源**：`dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir`
-  （一条命令装完即激活）、`dsh plugin --profile web update dsh-workspace-dir`——**不需要**本地安装源目录。
+- 安装/更新一律用 harness 官方命令 + **github 源**：`pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir`
+  （一条命令装完即激活）、`pnpm dsh plugin --profile web update dsh-workspace-dir`——**不需要**本地安装源目录。
 - 早期曾用 `file:` 本地路径依赖 + 独立安装源（如 `D:\Software\dsh_plugins\dsh-workspace-dir`）维护：
   **已退休**——本地安装源与开发源双目录同步容易不一致，且 `file:` 依赖的更新必须手动改目录内容
-  （`git pull` 安装源目录 + 重启），不如 `dsh plugin update` 一条命令。
+  （`git pull` 安装源目录 + 重启），不如 `pnpm dsh plugin update` 一条命令。
 - `github:…` 只跑 `prepare` 不跑 `build`；本仓库 `lib/` 已入库、无 prepare 脚本，git 安装不触发
   pnpm≥10 的 allowBuilds 关卡。
 - profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**，刷新页面即生效（`clientModules` 按内容
@@ -350,19 +349,19 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
    **Prefer the github source — one command, activated immediately**:
 
 ```sh
-# Run dsh directly when it is on PATH; for a source-checkout harness dsh is
-# not on PATH — call it via pnpm in the harness source dir (HARNESS_SRC from
-# Step 1):  cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
-dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+# For a source-checkout harness dsh is not on PATH — call it via pnpm in the
+# harness source dir (HARNESS_SRC from Step 1):
+cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+# (When dsh is on PATH, run directly: dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir)
 ```
 
 > For offline/local development use the local clone instead:
-> `dsh plugin --profile web add file:<absolute path to this repo>`.
-> If `dsh plugin` is unavailable, fall back to the manual way: edit
+> `pnpm dsh plugin --profile web add file:<absolute path to this repo>`.
+> If `pnpm dsh plugin` is unavailable, fall back to the manual way: edit
 > `~/.dsh/profiles/web/package.json`, add
 > `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"` to `dependencies`,
 > run `pnpm install` in the profile directory, then run
-> `dsh plugin --profile web install` to trigger the reconcile (or add
+> `pnpm dsh plugin --profile web install` to trigger the reconcile (or add
 > `dsh-workspace-dir` to `dsh.profile.bundles` in the profile's `package.json`
 > yourself).
 
@@ -417,7 +416,7 @@ should list `dsh-workspace-dir` in `dsh.profile.bundles`.
 
 ## Uninstall
 
-1. `dsh plugin --profile web remove dsh-workspace-dir` — one command removes
+1. `pnpm dsh plugin --profile web remove dsh-workspace-dir` — one command removes
    the dependency **and** its bundle layer from `dsh.profile.bundles` (or
    remove the dependency from the profile's `package.json` manually, run
    `pnpm install`, and remove `dsh-workspace-dir` from `dsh.profile.bundles`);
@@ -469,18 +468,19 @@ Chinese path, migrate to an English directory before continuing.
 - **After changing source, rebuild and commit `lib/`** (build artifacts are
   committed so a clone works out of the box).
 
-### 4. Install/update: official `dsh plugin` + github source; do not maintain a local install source
+### 4. Install/update: official `pnpm dsh plugin` + github source; do not maintain a local install source
 
 - Install and update exclusively through the official harness command with the
-  **github source**: `dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir`
+  **github source**: `pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir`
   (one command, activated immediately) and
-  `dsh plugin --profile web update dsh-workspace-dir` — **no local install
+  `pnpm dsh plugin --profile web update dsh-workspace-dir` — **no local install
   source directory needed**.
 - Early on we used a `file:` local-path dependency plus a separate install
   source (e.g. `D:\Software\dsh_plugins\dsh-workspace-dir`): **retired** —
   keeping a second directory in sync with the dev repo was error-prone, and
   updating a `file:` dependency meant manually changing the directory contents
-  (`git pull` in the install source + restart) instead of one `dsh plugin update`.
+  (`git pull` in the install source + restart) instead of one
+  `pnpm dsh plugin update`.
 - `github:…` runs only `prepare`, not `build`; this repo ships `lib/` and has
   no `prepare` script, so git installs do not hit the pnpm≥10 allowBuilds gate.
 - If the profile's `node_modules/dsh-workspace-dir` is a **junction**, refreshing
