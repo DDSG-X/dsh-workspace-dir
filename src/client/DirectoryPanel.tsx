@@ -26,14 +26,25 @@ interface PanelStore {
   subscribe: (fn: () => void) => () => void
 }
 
-const panelStore: PanelStore = {
-  open: false,
-  listeners: new Set(),
-  get() { return this.open },
-  set(v) { this.open = v; for (const fn of this.listeners) fn() },
-  toggle() { this.set(!this.open) },
-  subscribe(fn) { this.listeners.add(fn); return () => { this.listeners.delete(fn) } },
+/**
+ * Panel visibility store shared by the toggle button and the overlay panel.
+ * Built through a closure factory: methods capture the `store` variable
+ * instead of relying on `this`, so React's useSyncExternalStore can call
+ * `subscribe(fn)` unbound without losing the listeners set.
+ */
+function createPanelStore(): PanelStore {
+  const store: PanelStore = {
+    open: false,
+    listeners: new Set(),
+    get() { return store.open },
+    set(v) { store.open = v; for (const fn of store.listeners) fn() },
+    toggle() { store.set(!store.open) },
+    subscribe(fn) { store.listeners.add(fn); return () => { store.listeners.delete(fn) } },
+  }
+  return store
 }
+
+const panelStore: PanelStore = createPanelStore()
 
 const PANEL_WIDTH = 280
 const DEFAULT_POS = { x: 272, y: 64 }
