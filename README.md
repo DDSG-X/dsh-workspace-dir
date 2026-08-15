@@ -58,7 +58,7 @@ AI 会自己完成:克隆仓库 → 读取安装引导(`AI-INSTALL.md`)→ 判�
 >
 > ⚠️ **本项目未发布到 npm**:请**不要**用包名安装(如 `npm install dsh-workspace-dir`、
 > `dsh plugin add dsh-workspace-dir` 都会因 npm 上找不到该包而失败)。安装用
-> **github 源**(`dsh plugin add github:DDSG-X/dsh-workspace-dir`,一条命令装完即激活);
+> **github 源**(`pnpm dsh plugin add github:DDSG-X/dsh-workspace-dir`,一条命令装完即激活);
 > 离线/开发场景才用 `file:` 指向本地克隆目录。
 
 ### AI 安装效果示例
@@ -164,6 +164,8 @@ pnpm dsh plugin --profile web remove dsh-workspace-dir
 # 快速验证(Host 半路由是否加载;返回 JSON 文件列表即正常)
 curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"
 ```
+
+> ⚠️ **add / update / remove 后必须重启 harness 才生效**（harness 没有「安装/卸载包的热插拔」，bundle 配置在启动时加载；只刷新页面会报 `failed to load`）。
 
 ### 更新插件
 
