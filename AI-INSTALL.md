@@ -190,7 +190,8 @@ cd $HARNESS_SRC && pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace
 - `github:…` 只跑 `prepare` 不跑 `build`；本仓库 `lib/` 已入库、无 prepare 脚本，git 安装不触发
   pnpm≥10 的 allowBuilds 关卡。
 - profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**，刷新页面即生效（`clientModules` 按内容
-  hash 提供 bundle，自动更新 rev）；github 源安装/更新后重启 harness 生效。
+  hash 提供 bundle，自动更新 rev）；github 源安装/更新后：**add/remove 必须重启 harness**（entry 表是启动
+  快照），**update 仅内容更新时刷新即可生效**（serveBundle 每次读盘返回新内容）。
 
 ### 5. 面板 UI 状态持久化约定（打开状态 + 位置 + 透明度）
 
@@ -485,8 +486,10 @@ Chinese path, migrate to an English directory before continuing.
   no `prepare` script, so git installs do not hit the pnpm≥10 allowBuilds gate.
 - If the profile's `node_modules/dsh-workspace-dir` is a **junction**, refreshing
   the page after an update is enough (`clientModules` serves bundles by content
-  hash and updates the rev automatically); after a github-source install/update,
-  restart the harness to activate.
+  hash and updates the rev automatically); for github-source changes:
+  **add/remove require a full harness restart** (the loader entry table is a
+  boot-time snapshot), while **a content-only `update` takes effect on a plain
+  page refresh** (`serveBundle` re-reads the file from disk on every request).
 
 ### 5. Panel UI state persistence (open state + position + opacity)
 

@@ -34,7 +34,9 @@ cd /path/to/deepseek-harness    # ← 你的 harness 源码目录(Windows 示例
 pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
-装完**重启 harness** 即生效(⚠️ add/update/remove 后**没有热插拔**,只刷新页面会报 `failed to load`)。
+装完**重启 harness** 即生效。生效规则:
+- **add / remove(装/卸插件) → 必须重启 harness**(loader 的 entry 表是启动时快照,只刷新会 `failed to load` 或 404)
+- **update(更新插件内容) → 刷新页面即可生效**(服务端每次请求都重新读 bundle 文件)
 
 更新 / 卸载 / 验证:
 
