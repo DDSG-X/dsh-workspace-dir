@@ -20,7 +20,34 @@
 - **在系统文件管理器中打开**当前文件夹或任意子文件夹(Windows 资源管理器 / macOS Finder / Linux 文件管理器,自动适配)
 - 切换会话自动跟随新会话的工作目录;无工作目录的会话不显示
 
-## 安装:让 AI 帮你(推荐——本项目的安装就是为这个设计的)
+## 快速开始(最正规,一条命令装完即激活)
+
+> 源码运行的 harness,`dsh` 是工作区脚本而非全局命令,**需在 harness 源码目录用
+> `pnpm dsh` 调用**(示例 `cd D:/Software/deepseek-harness`);若你的 `dsh` 在
+> PATH 中(全局安装版),直接去掉 `pnpm` 前缀。
+
+```sh
+cd /path/to/deepseek-harness    # ← 你的 harness 源码目录
+pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+```
+
+装完**重启 harness** 即生效(⚠️ add/update/remove 后**没有热插拔**,只刷新页面会报 `failed to load`)。
+
+更新 / 卸载 / 验证:
+
+```sh
+pnpm dsh plugin --profile web update dsh-workspace-dir    # 更新
+pnpm dsh plugin --profile web remove dsh-workspace-dir    # 卸载
+curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"   # 验证:返回 JSON 文件列表即正常
+```
+
+> ⚠️ **本项目未发布到 npm**:不要用包名安装(`npm install dsh-workspace-dir`、
+> `dsh plugin add dsh-workspace-dir` 会因 npm 上找不到该包而失败)。github 源直接
+> 拉取本仓库;离线/本地开发才用 `file:` 指向本地克隆目录。
+>
+> 不想手动敲命令?对 AI 说一句话即可——见下节「安装:让 AI 帮你」。
+
+## 安装:让 AI 帮你(推荐新手——本项目的安装就是为这个设计的)
 
 **本项目面向完全不熟悉它的 DeepSeek Harness 用户。** 你不需要懂插件、依赖、
 profile——**装好它,只需要对你的 AI 说一句话**:
@@ -144,28 +171,6 @@ pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 
 - 打开任意会话 → 标题旁出现 **"目录"** 按钮
 - 点击弹出目录面板;拖动标题栏移动;滑杆调透明度;`✕` 关闭
-
-### 终端命令速查(安装 / 更新 / 卸载)
-
-> 源码运行的 harness,`dsh` 是工作区脚本而非全局命令,**先在 harness 源码目录用
-> `pnpm dsh` 调用**(如 `cd D:/Software/deepseek-harness`);若你的 `dsh` 在
-> PATH 中(全局安装版),可直接去掉 `pnpm` 前缀。
-
-```sh
-# 安装(首次,一条命令装完即激活)
-pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
-
-# 更新(拉取仓库最新代码并触发 reconcile)
-pnpm dsh plugin --profile web update dsh-workspace-dir
-
-# 卸载(同时移除依赖和 dsh.profile.bundles 里的 bundle 层)
-pnpm dsh plugin --profile web remove dsh-workspace-dir
-
-# 快速验证(Host 半路由是否加载;返回 JSON 文件列表即正常)
-curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"
-```
-
-> ⚠️ **add / update / remove 后必须重启 harness 才生效**（harness 没有「安装/卸载包的热插拔」，bundle 配置在启动时加载；只刷新页面会报 `failed to load`）。
 
 ### 更新插件
 
