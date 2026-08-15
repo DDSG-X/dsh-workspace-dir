@@ -31,9 +31,10 @@ AI 会自己完成:克隆仓库 → 读取安装引导(`AI-INSTALL.md`)→ 判�
 重启 harness → 验证"目录"按钮。**它只会在你批准时修改你的 profile 文件**;
 遇到环境差异,也会按引导里的故障排查表处理,并把结果汇报给你。
 
-> 英文版引导在 [`AI-INSTALL.en.md`](AI-INSTALL.en.md);对英文 AI 说:
+> 引导文件 `AI-INSTALL.md` 为**中英双语单文件**(英文版在文件后半段,从
+> `# English Guide` 开始);对英文 AI 说:
 > "Clone https://github.com/DDSG-X/dsh-workspace-dir to an English path, read
-> `AI-INSTALL.en.md`, install the plugin, then verify the Directory button works."
+> the English section of `AI-INSTALL.md`, install the plugin, then verify the Directory button works."
 
 ### 想自己动手?也可以只做 3 步
 
