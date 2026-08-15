@@ -154,6 +154,53 @@ pnpm install
 | `list` 路由 404 | Host 半未加载 | 检查 patch 行 `name: dsh-workspace-dir` 拼写 |
 | 展开报 `directory browse failed` | 用了旧版代码 | 重新 `pnpm build` |
 
+## 开发/排错经验(重要,勿重蹈)
+
+### 1. 浏览器报 `Cannot read properties of undefined (reading 'add')` at subscribe
+
+- **根因**:`panelStore` 若用对象方法简写(`get() { return this.open }`)依赖 `this`,而 React 的
+  `useSyncExternalStore` 是**解绑调用** `subscribe(fn)`——`this` 为 `undefined`,`this.listeners` 即
+  `undefined`,`.add()` 崩溃。头部按钮与浮动面板共用此 store,两个 slot 都会渲染失败被退役。
+- **修复**:用闭包工厂,方法捕获 `store` 变量而非 `this`:
+
+  ```ts
+  function createPanelStore(): PanelStore {
+    const store = { /* ... */ get() { return store.open } /* ... */ }
+    return store
+  }
+  const panelStore = createPanelStore()
+  ```
+
+- **排查线索**:slot 已注册但 `active: false`(被 abdicated);浏览器控制台有
+  `slot entry crashed in '...'` + TypeError 堆栈。
+
+### 2. 中文路径会乱码
+
+`D:\Projects\插件` 这类中文路径在 pnpm 里会变成 `鎻掍欢`,导致 pnpm install 卡死/失败。
+**项目必须放在英文路径下**。若用户的工作区是中文路径,提示先迁移到英文目录再继续。
+
+### 3. 构建环境(沙箱/离线场景)
+
+- 沙箱无网络时 **不要用 `pnpm build`**(会尝试解析依赖);直接调本地工具:
+  ```sh
+  cd <本仓库目录>
+  node node_modules/tsdown/dist/run.mjs      # 生成 lib/index.js + lib/client.js
+  ```
+- 若 `node_modules` 不在仓库内(新克隆),可从已有安装源目录复制,或先确认依赖就绪。
+
+### 4. 安装源同步
+
+- 正式安装源与开发仓库分离时(如安装源 `D:\Software\dsh_plugins\dsh-workspace-dir`、
+  开发源 `D:\Projects\plugins\dsh-workspace-dir`),**先改开发源并提交 git,再同步到安装源**。
+- profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**,构建后刷新页面即生效
+  (`clientModules` 按内容 hash 提供 bundle,自动更新 rev);若是实体副本则需手动复制 lib。
+
+### 5. 面板透明度持久化约定
+
+- 面板默认最透明(20%,滑杆最小值),且关闭再打开应记住上次调整值。
+- 实现:`panelOpacity` 为模块级变量(初始 `0.2`),state 初始化为 `panelOpacity`,
+  滑杆 `onChange` 同步写回 `panelOpacity`。不要用组件内 `useState(0.9)`(会每次重置)。
+
 ## 卸载
 
 1. 从 `~/.dsh/profiles/web/cordis.patch.yml` 删除 `workspace-dir` 行;

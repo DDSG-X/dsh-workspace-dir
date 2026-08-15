@@ -49,6 +49,13 @@ const panelStore: PanelStore = createPanelStore()
 const PANEL_WIDTH = 280
 const DEFAULT_POS = { x: 272, y: 64 }
 
+/**
+ * Panel background opacity, persisted at module scope so the panel reopens
+ * with the last-adjusted value instead of resetting every time. Defaults to
+ * the most transparent state (20%, the slider minimum).
+ */
+let panelOpacity = 0.2
+
 /** Real theme tokens (verified via Theme.listTokens). */
 const T = {
   bg: 'var(--dsw-alias-bg-overlay)',
@@ -138,7 +145,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   const [error, setError] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [pos, setPos] = useState(DEFAULT_POS)
-  const [opacity, setOpacity] = useState(0.9)
+  const [opacity, setOpacity] = useState(panelOpacity)
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null)
 
   // Reset navigation when the session's working directory changes.
@@ -253,7 +260,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
             max="100"
             step="5"
             value={String(Math.round(opacity * 100))}
-            onChange={(e) => { setOpacity(Number(e.target.value) / 100) }}
+            onChange={(e) => { panelOpacity = Number(e.target.value) / 100; setOpacity(panelOpacity) }}
             title={`背景透明度 ${Math.round(opacity * 100)}%`}
             style={{ width: '64px', cursor: 'pointer', accentColor: T.label, margin: 0 }}
           />

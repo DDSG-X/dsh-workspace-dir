@@ -179,6 +179,62 @@ that case:
 | `list` route 404 | host half not loaded | Check the patch row `name: dsh-workspace-dir` spelling |
 | Expand reports `directory browse failed` | stale code | Re-run `pnpm build` |
 
+## Development / debugging lessons (important, do not repeat)
+
+### 1. Browser reports `Cannot read properties of undefined (reading 'add')` at subscribe
+
+- **Root cause**: if `panelStore` uses object method shorthand (`get() { return this.open }`), it
+  relies on `this`. React's `useSyncExternalStore` calls `subscribe(fn)` **unbound** — `this` is
+  `undefined`, so `this.listeners` is `undefined` and `.add()` throws. Both the header toggle and
+  the floating panel share this store, so both slot entries crash and are retired.
+- **Fix**: build the store through a closure factory whose methods capture the `store` variable
+  instead of `this`:
+
+  ```ts
+  function createPanelStore(): PanelStore {
+    const store = { /* ... */ get() { return store.open } /* ... */ }
+    return store
+  }
+  const panelStore = createPanelStore()
+  ```
+
+- **How to spot it**: the slot entry is registered but `active: false` (abdicated); the browser
+  console shows `slot entry crashed in '...'` plus a TypeError stack.
+
+### 2. Chinese paths garble
+
+A Chinese path such as `D:\Projects\插件` becomes `鎻掍欢` under pnpm, stalling or failing
+`pnpm install`. **The project must live on an English path.** If the user's workspace is a
+Chinese path, migrate to an English directory before continuing.
+
+### 3. Build environment (sandbox / offline scenarios)
+
+- With no network in the sandbox, **do not use `pnpm build`** (it tries to resolve deps);
+  invoke the local tool directly:
+  ```sh
+  cd <this repo>
+  node node_modules/tsdown/dist/run.mjs      # produces lib/index.js + lib/client.js
+  ```
+- If `node_modules` is absent (fresh clone), copy it from an existing install source or confirm
+  deps first.
+
+### 4. Keeping the install source in sync
+
+- When the production install source and the dev repo are separate (e.g. install source
+  `D:\Software\dsh_plugins\dsh-workspace-dir`, dev repo `D:\Projects\plugins\dsh-workspace-dir`),
+  **edit the dev repo and commit git first, then sync to the install source**.
+- If the profile's `node_modules/dsh-workspace-dir` is a **junction**, refreshing the page after a
+  rebuild is enough (`clientModules` serves bundles by content hash and updates the rev
+  automatically); if it is a real copy, copy `lib/` over manually.
+
+### 5. Panel opacity persistence convention
+
+- The panel should open at the most transparent state (20%, the slider minimum) and remember the
+  last-adjusted value across open/close.
+- Implementation: `panelOpacity` is a module-scope variable (initial `0.2`), the state is
+  initialized to `panelOpacity`, and the slider `onChange` writes `panelOpacity` back. Do not use
+  a component-local `useState(0.9)` (it resets every time).
+
 ## Uninstall
 
 1. Remove the `workspace-dir` row from `~/.dsh/profiles/web/cordis.patch.yml`;
