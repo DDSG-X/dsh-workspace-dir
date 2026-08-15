@@ -324,6 +324,25 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     lineHeight: '18px',
   }
   const panelBg = `color-mix(in srgb, ${T.bg} ${Math.round(opacity * 100)}%, transparent)`
+  /** Toast-bubble note shown after a successful OS-file-manager open (the window may not come to front). */
+  const toastStyle: React.CSSProperties = {
+    position: 'fixed',
+    right: '16px',
+    bottom: '16px',
+    maxWidth: '300px',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    background: T.bg,
+    border: `1px solid ${T.border}`,
+    boxShadow: '0 6px 24px rgba(0,0,0,0.2)',
+    color: T.label,
+    fontFamily: FONT,
+    fontSize: '12px',
+    lineHeight: '1.5',
+    whiteSpace: 'normal',
+    zIndex: 1100,
+    pointerEvents: 'none',
+  }
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
     dragRef.current = { startX: e.clientX, startY: e.clientY, originX: pos.x, originY: pos.y }
@@ -345,6 +364,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   }
 
   return (
+    <>
     <div style={{
       position: 'fixed',
       left: `${pos.x}px`,
@@ -445,9 +465,6 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
         {openError !== undefined && (
           <div style={{ ...childRow, cursor: 'default', color: T.error }}>⚠ {openError}</div>
         )}
-        {openNote !== undefined && (
-          <div style={{ ...childRow, cursor: 'default', color: T.labelDim, whiteSpace: 'normal' }}>ℹ {openNote}</div>
-        )}
 
         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: '4px', paddingTop: '4px' }}>
           {loading && (
@@ -520,6 +537,10 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
         </div>
       </div>
     </div>
+    {openNote !== undefined && (
+      <div role="status" style={toastStyle}>ℹ {openNote}</div>
+    )}
+    </>
   )
 }
 
