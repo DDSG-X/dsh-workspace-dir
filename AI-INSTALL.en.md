@@ -5,6 +5,15 @@
 > repository as a workspace, read this file and follow the steps below to
 > install the plugin automatically.
 >
+> **The user is likely a complete newcomer to this plugin — and to installing
+> plugins at all.** Therefore:
+> - Do not assume the user is technical — briefly tell them what you are about
+>   to do (detect environment → install into the profile → restart → verify);
+> - Before modifying `~/.dsh/profiles/web`, explain and get the user's approval
+>   (your write access requires their confirmation);
+> - If the user cannot answer a question (e.g. "where is the harness source?"),
+>   do not keep asking — fall back to the ready-made path in Step 1.
+>
 > Your access: this repository directory (writable), the harness source
 > checkout (usually readable), and `~/.dsh/profiles/web` (writes require user
 > approval). Every step has a **verify** and a **failure handling** clause —
@@ -56,6 +65,12 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
   restart in Step 3);
 - If nothing is found → **do not guess paths; ask the user directly**: where is
   the harness source? Is the web profile initialized (has `dsh web` been run once)?
+- **Only an npm-installed `dsh` was found (no source checkout)** → tell the user
+  honestly: this plugin's peer deps are provided by the harness source repo (some
+  are vendored) and are incomplete on npm, so an **npm-installed harness is not
+  supported yet**; recommend switching to a source checkout of the harness (clone
+  the deepseek-harness repo → `pnpm install` → `pnpm dsh web` per the official
+  README) and then come back to install this plugin. Do not force the install.
 - If `PROFILE_EXISTS` is missing, ask the user to run `dsh web` once to create the profile.
 
 ## Step 2: Install into the web profile (core step, no build)

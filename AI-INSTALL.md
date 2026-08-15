@@ -3,6 +3,11 @@
 > 本文档写给 **AI agent**(DeepSeek Harness 或其他编码代理),不是给人手动执行的。
 > 用户把本仓库作为 workspace 打开后,你可以直接读取本文件,按以下步骤自动完成安装。
 >
+> **你的用户很可能完全不了解这个插件,也不懂安装**。因此:
+> - 不要假设用户懂技术——先简短告诉用户你要做什么(检测环境 → 装进 profile → 重启 → 验证);
+> - 修改 `~/.dsh/profiles/web` 前,先说明并取得用户批准(你的写入权限需要用户确认);
+> - 用户答不上来的问题(如"harness 源码在哪")不要反复追问,给出现成的最简路径(见第 1 步)。
+>
 > 你的权限:本仓库目录(可写)、harness 源码目录(通常可读)、`~/.dsh/profiles/web`(需要用户批准写入)。
 > 每一步都有"验证"和"失败处理",请逐条执行,不要跳过验证。
 >
@@ -44,6 +49,10 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
 
 - 若检测到源码 checkout → 记下 `HARNESS_SRC`(下面第 3 步重启要用);
 - 若什么都没检测到 → **不要猜路径,直接问用户**:harness 源码目录在哪?web profile 是否已初始化(跑过一次 `dsh web`)?
+- **只检测到 npm 安装的 dsh(没有源码 checkout)** → 如实告知用户:本插件的 peer 依赖由
+  harness 源码仓库提供(部分为 vendored),npm 上不完整,**npm 安装版 harness 暂不支持**;
+  建议按官方 README 从源码运行 harness(克隆 deepseek-harness 仓库 → `pnpm install` →
+  `pnpm dsh web`)后再回来装本插件。不要尝试硬装。
 - 若 `PROFILE_EXISTS` 不存在,提示用户先跑一次 `dsh web` 生成 profile。
 
 ## 第 2 步:安装到 web profile(核心,无构建)

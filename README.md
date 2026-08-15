@@ -11,27 +11,33 @@ DeepSeek Harness 插件:查看**当前对话的工作目录**及其文件列表�
 - 显示当前会话工作目录 + 文件/子目录列表,**缩进分层**、支持下钻
 - 切换会话自动跟随新会话的工作目录;无工作目录的会话不显示
 
-## 安装:让 AI 帮你(推荐)
+## 安装:让 AI 帮你(推荐——本项目的安装就是为这个设计的)
 
-使用 DeepSeek Harness 的你一定有一个 AI 助手。**最简单的方式是让 AI 完成安装**:
+**本项目面向完全不熟悉它的 DeepSeek Harness 用户。** 你不需要知道插件怎么装、
+依赖怎么配、profile 是什么——**你只需要做下面 3 步,剩下的全部交给你的 AI**:
 
-1. 克隆本仓库(或在 harness 里把本仓库作为 workspace 打开):
+1. 把本仓库克隆到**英文路径**(中文路径会导致 pnpm 乱码,安装会失败):
 
    ```sh
    git clone https://github.com/DDSG-X/dsh-workspace-dir.git
    ```
 
-2. 对你的 AI 说(中文版引导:项目内 `AI-INSTALL.md`;英文版:`AI-INSTALL.en.md`):
+2. 在 DeepSeek Harness 里,把克隆下来的目录打开为 workspace(设为当前工作目录);
+
+3. 对你的 AI 说下面这句话(中文引导在项目内 `AI-INSTALL.md`,英文版 `AI-INSTALL.en.md`):
 
    > 请读取本项目的 `AI-INSTALL.md`,按里面的步骤把 `dsh-workspace-dir` 插件安装到我的 harness,并验证"目录"按钮能正常弹出面板。
 
-AI 会自动完成环境检测、profile 配置、重启验证。安装过程遇到任何环境差异,AI 也会按引导里的故障排查表处理。
+AI 会读取引导文件,自动完成:判断你的 harness 是源码运行还是 npm 安装、
+检测/初始化 web profile、把插件装进 profile、重启 harness、验证"目录"按钮。
+**它只会在你批准时修改你的 profile 文件**;遇到任何环境差异,也会按引导里的
+故障排查表处理,并把结果汇报给你。
 
 > 本仓库**自带构建产物**(`lib/`),克隆后无需构建,可直接安装。只有修改源码的开发者才需要重新构建。
 
 ### AI 安装效果示例
 
-你只需要克隆仓库、说一句话,然后 AI 大致会这样工作(实际输出会因环境和模型而异):
+一个完全不了解插件的用户,实际体验大致是这样(实际输出会因环境和模型而异):
 
 ```text
 你:请读取本项目的 AI-INSTALL.md,把 dsh-workspace-dir 插件安装到我的
@@ -64,7 +70,12 @@ AI:
 > [`AI-INSTALL.en.md`](AI-INSTALL.en.md). Tell your AI:
 > "Read `AI-INSTALL.en.md` and install this plugin, then verify the Directory button works."
 
-## 安装(手动,给想自己动手的人)
+## 安装(手动,给想自己动手/了解细节的人)
+
+> 一般用户不需要看这节——**AI 安装(上一节)会自动处理一切**。
+> 另外请注意:本插件目前要求 **源码运行的 harness**(官方 README 推荐方式)。
+> 如果你的 harness 是 npm 安装的(`npx @deepseek-ai/dsh web`),插件的 peer 依赖
+> 由源码仓库提供、npm 上不完整,可能装不上——建议按官方 README 从源码运行。
 
 > 本插件是 **out-of-tree 插件**:依赖 profile 的 hoisted linker,缺失的 peer
 > 依赖(`@deepseek-ai/*`、`react` 等)在运行时由 harness 安装提供,不需要也不
@@ -115,6 +126,7 @@ dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir
 | 现象 | 原因 | 解决 |
 | --- | --- | --- |
 | 按钮/面板不出现 | 插件未加载 | 检查 profile 的 package.json 依赖和 cordis.patch.yml 是否都配好 |
+| 安装时报 peer 依赖版本找不到 | harness 是 npm 安装版 | 改用源码运行的 harness(见手动安装节说明) |
 | 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(重新构建或重新克隆) |
 | 面板文字不可见 | 旧版用错主题变量 | 更新代码(`--dsw-alias-*` 已修复) |
 
