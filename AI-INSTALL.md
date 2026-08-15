@@ -179,11 +179,13 @@ pnpm install
 - profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**,构建后刷新页面即生效
   (`clientModules` 按内容 hash 提供 bundle,自动更新 rev);若是实体副本则需手动复制 lib。
 
-### 5. 面板透明度持久化约定
+### 5. 面板 UI 状态持久化约定（位置 + 透明度）
 
-- 面板默认最透明(20%,滑杆最小值),且关闭再打开应记住上次调整值。
-- 实现:`panelOpacity` 为模块级变量(初始 `0.2`),state 初始化为 `panelOpacity`,
-  滑杆 `onChange` 同步写回 `panelOpacity`。不要用组件内 `useState(0.9)`(会每次重置)。
+- 面板默认最透明（20%）、默认位置 `{x:272,y:64}`；拖动后的位置与滑杆透明度都应**跨 harness 重启记住**。
+- 实现：localStorage 键 `dsw-workspace-dir:panelPos`（JSON `{x,y}`）与 `dsw-workspace-dir:panelOpacity`（数字）；
+  模块加载时读入（`loadPanelPos`/`loadPanelOpacity`，带 try/catch——沙箱 iframe 可能禁用 localStorage，失败退回默认），
+  拖动结束（`onPointerUp`）写回位置、滑杆 `onChange` 写回透明度；组件 state 用模块变量初始化。
+- 不要用组件内 `useState(默认值)` 初值（会每次重置）。
 
 ### 6. 打开系统文件夹:用官方 `host.openPath`,不要自己拼命令
 
@@ -433,13 +435,17 @@ Chinese path, migrate to an English directory before continuing.
   rebuild is enough (`clientModules` serves bundles by content hash and updates the rev
   automatically); if it is a real copy, copy `lib/` over manually.
 
-### 5. Panel opacity persistence convention
+### 5. Panel UI state persistence (position + opacity)
 
-- The panel should open at the most transparent state (20%, the slider minimum) and remember the
-  last-adjusted value across open/close.
-- Implementation: `panelOpacity` is a module-scope variable (initial `0.2`), the state is
-  initialized to `panelOpacity`, and the slider `onChange` writes `panelOpacity` back. Do not use
-  a component-local `useState(0.9)` (it resets every time).
+- The panel opens at the most transparent state (20%) and the default
+  position `{x:272,y:64}`; the dragged position and slider opacity should
+  survive harness restarts.
+- Implementation: localStorage keys `dsw-workspace-dir:panelPos` (JSON
+  `{x,y}`) and `dsw-workspace-dir:panelOpacity` (number); read them at module
+  load with try/catch (sandboxed iframes may disable localStorage — fall back
+  to defaults), write back on drag end (`onPointerUp`) / slider `onChange`,
+  and initialize component state from the module variables. Never initialize
+  from a component-local constant (it resets every time).
 
 ### 6. Opening a folder in the OS file manager: use the official `host.openPath`
 

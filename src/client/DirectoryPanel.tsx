@@ -49,12 +49,55 @@ const panelStore: PanelStore = createPanelStore()
 const PANEL_WIDTH = 280
 const DEFAULT_POS = { x: 272, y: 64 }
 
+/** localStorage keys for panel UI state (survives harness restarts). */
+const STORE_POS_KEY = 'dsw-workspace-dir:panelPos'
+const STORE_OPACITY_KEY = 'dsw-workspace-dir:panelOpacity'
+const OPACITY_MIN = 0.2
+const OPACITY_MAX = 1
+
+/** Read panel position from localStorage; falls back to the default. */
+function loadPanelPos(): { x: number; y: number } {
+  try {
+    const raw = localStorage.getItem(STORE_POS_KEY)
+    if (raw === null) return DEFAULT_POS
+    const parsed = JSON.parse(raw) as { x?: unknown; y?: unknown }
+    if (typeof parsed.x !== 'number' || typeof parsed.y !== 'number') return DEFAULT_POS
+    return { x: Math.max(0, parsed.x), y: Math.max(0, parsed.y) }
+  } catch {
+    return DEFAULT_POS
+  }
+}
+
+/** Persist panel position; failures (e.g. sandboxed iframe) are ignored. */
+function savePanelPos(pos: { x: number; y: number }): void {
+  try { localStorage.setItem(STORE_POS_KEY, JSON.stringify(pos)) } catch { /* ignore */ }
+}
+
+/** Read panel opacity from localStorage; falls back to the most transparent state. */
+function loadPanelOpacity(): number {
+  try {
+    const raw = localStorage.getItem(STORE_OPACITY_KEY)
+    if (raw === null) return OPACITY_MIN
+    const value = Number(raw)
+    return Number.isFinite(value) && value >= OPACITY_MIN && value <= OPACITY_MAX ? value : OPACITY_MIN
+  } catch {
+    return OPACITY_MIN
+  }
+}
+
+/** Persist panel opacity; failures are ignored. */
+function savePanelOpacity(opacity: number): void {
+  try { localStorage.setItem(STORE_OPACITY_KEY, String(opacity)) } catch { /* ignore */ }
+}
+
 /**
- * Panel background opacity, persisted at module scope so the panel reopens
- * with the last-adjusted value instead of resetting every time. Defaults to
- * the most transparent state (20%, the slider minimum).
+ * Panel UI state persisted across open/close AND harness restarts: module
+ * scope seeds from localStorage so the panel reopens where / at what opacity
+ * the user left it, instead of resetting every time. Opacity defaults to the
+ * most transparent state (20%, the slider minimum).
  */
-let panelOpacity = 0.2
+let panelPos = loadPanelPos()
+let panelOpacity = loadPanelOpacity()
 
 /** Real theme tokens (verified via Theme.listTokens). */
 const T = {
@@ -145,7 +188,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   const [error, setError] = useState<string | undefined>(undefined)
   const [openError, setOpenError] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(false)
-  const [pos, setPos] = useState(DEFAULT_POS)
+  const [pos, setPos] = useState(panelPos)
   const [opacity, setOpacity] = useState(panelOpacity)
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null)
 
@@ -231,8 +274,13 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     setPos({ x: d.originX + (e.clientX - d.startX), y: d.originY + (e.clientY - d.startY) })
   }
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>): void => {
+    const hadDrag = dragRef.current !== null
     dragRef.current = null
     e.currentTarget.releasePointerCapture(e.pointerId)
+    if (hadDrag) {
+      panelPos = pos
+      savePanelPos(pos)
+    }
   }
 
   return (
@@ -285,7 +333,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
             max="100"
             step="5"
             value={String(Math.round(opacity * 100))}
-            onChange={(e) => { panelOpacity = Number(e.target.value) / 100; setOpacity(panelOpacity) }}
+            onChange={(e) => { panelOpacity = Number(e.target.value) / 100; setOpacity(panelOpacity); savePanelOpacity(panelOpacity) }}
             title={`背景透明度 ${Math.round(opacity * 100)}%`}
             style={{ width: '64px', cursor: 'pointer', accentColor: T.label, margin: 0 }}
           />
