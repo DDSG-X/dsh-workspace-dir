@@ -364,8 +364,9 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
           borderBottom: `1px solid ${T.border}`,
         }}
       >
-        <span style={{ fontSize: '12px', fontWeight: 600, color: T.label, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          📁 目录
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 600, color: T.label, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ flexShrink: 0, display: 'inline-flex' }}><FolderIcon size={14} /></span>
+          <span>目录</span>
         </span>
         <div
           style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
