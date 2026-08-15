@@ -11,7 +11,23 @@ DeepSeek Harness 插件:查看**当前对话的工作目录**及其文件列表�
 - 显示当前会话工作目录 + 文件/子目录列表,**缩进分层**、支持下钻
 - 切换会话自动跟随新会话的工作目录;无工作目录的会话不显示
 
-## 安装(给没开发过的人的分步指南)
+## 安装:让 AI 帮你(推荐)
+
+使用 DeepSeek Harness 的你一定有一个 AI 助手。**最简单的方式是让 AI 完成安装**:
+
+1. 克隆本仓库(或在 harness 里把本仓库作为 workspace 打开):
+
+   ```sh
+   git clone https://github.com/DDSG-X/dsh-workspace-dir.git
+   ```
+
+2. 对你的 AI 说:
+
+   > 请读取本项目的 `AI-INSTALL.md`,按里面的步骤把 `dsh-workspace-dir` 插件安装到我的 harness,并验证"目录"按钮能正常弹出面板。
+
+AI 会自动完成环境检测、构建、profile 配置、重启验证。安装过程遇到任何环境差异,AI 也会按引导里的故障排查表处理。
+
+## 安装(手动,给想自己动手的人)
 
 > 本插件依赖 DeepSeek Harness 的**源码运行环境**。推荐先按官方 README 从源码运行 harness:
 >
