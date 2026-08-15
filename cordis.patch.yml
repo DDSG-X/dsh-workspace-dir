@@ -1,0 +1,9 @@
+# dsh-workspace-dir bundle patch layer.
+#
+# This file is exported as this package's `dsh.bundle.patch` (see
+# `dsh.bundle` in package.json). When the package is installed as a profile
+# dependency, `dsh plugin` reconciles it into `dsh.profile.bundles` and this
+# layer is applied automatically — no manual cordis.patch.yml edit needed.
+- insert:
+    - id: workspace-dir
+      name: dsh-workspace-dir

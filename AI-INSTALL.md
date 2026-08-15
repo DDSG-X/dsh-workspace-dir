@@ -30,7 +30,7 @@ pwd
 ls
 ```
 
-本仓库应包含:`src/`、`lib/`(构建产物,已入库)、`package.json`、`tsdown.config.ts`、`AI-INSTALL.md`。
+本仓库应包含:`src/`、`lib/`(构建产物,已入库)、`package.json`、`cordis.patch.yml`(bundle patch 层)、`tsdown.config.ts`、`AI-INSTALL.md`。
 
 ## 第 1 步:检测 harness 运行环境(关键分叉)
 
@@ -64,11 +64,18 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
 > `autoInstallPeers: false`,所以插件的 peer 依赖(`@deepseek-ai/*`、`react`)在
 > 运行时由 harness 安装提供,安装阶段**不需要**也从 npm 解析它们。
 >
+> 本插件是 **bundle 形态**:`package.json` 的 `dsh.bundle.patch` 指向仓库自带的
+> `cordis.patch.yml`。`dsh plugin` 装完依赖后会执行 reconcile,把声明了
+> `dsh.bundle` 的依赖自动写入 profile 的 `dsh.profile.bundles`
+> (profile `package.json` 里的 `dsh.profile.bundles` 数组)——**不需要**手动编辑
+> profile 的 `cordis.patch.yml`。
+>
 > ⚠️ **本项目未发布到 npm**:安装必须用 `file:` 指向**本地克隆目录**。
 > 不要尝试 `dsh plugin add dsh-workspace-dir` 或 `npm install dsh-workspace-dir`
 > (npm 上找不到该包,会失败)。
 
-1. 用 harness 的插件管理命令把本仓库加为 profile 依赖(自动写 `package.json`):
+1. 用 harness 的插件管理命令把本仓库加为 profile 依赖(自动写 `package.json`,
+   并自动注册为 profile bundle):
 
 ```sh
 dsh plugin --profile web add file:<本仓库绝对路径>
@@ -76,24 +83,17 @@ dsh plugin --profile web add file:<本仓库绝对路径>
 
 > 若 `dsh plugin` 不可用(命令不存在/报错),退回手动方式:
 > 编辑 `~/.dsh/profiles/web/package.json`,在 `dependencies` 加
-> `"dsh-workspace-dir": "file:<本仓库绝对路径>"`,然后在 profile 目录 `pnpm install`。
+> `"dsh-workspace-dir": "file:<本仓库绝对路径>"`,然后在 profile 目录 `pnpm install`,
+> 最后执行 `dsh plugin --profile web install` 触发 reconcile(或手动把
+> `dsh-workspace-dir` 加进 profile `package.json` 的 `dsh.profile.bundles`)。
 
-2. 编辑 `~/.dsh/profiles/web/cordis.patch.yml`,追加(必须,`dsh plugin add` 不会写这行):
+> ⚠️ **不要**再往 profile 的 `cordis.patch.yml` 手动加 `workspace-dir` 行:
+> bundle 层已经注册了同 id 的 loader entry,手动行会与它重复插入,
+> harness 启动时报 `duplicate loader entry id: workspace-dir` 硬失败。
 
-```yaml
-- insert:
-    - id: workspace-dir
-      name: dsh-workspace-dir
-```
-
-3. 若第 1 步是手动方式,在 profile 目录安装:
-
-```sh
-cd ~/.dsh/profiles/web
-pnpm install
-```
-
-**验证**:`ls ~/.dsh/profiles/web/node_modules/dsh-workspace-dir/lib/` 应包含 `index.js` 和 `client.js`。
+**验证**:`ls ~/.dsh/profiles/web/node_modules/dsh-workspace-dir/lib/` 应包含
+`index.js` 和 `client.js`;`cat ~/.dsh/profiles/web/package.json` 的
+`dsh.profile.bundles` 应含 `dsh-workspace-dir`。
 **失败处理**:
 - `dsh plugin add` 报 pnpm 找不到 → 提示用户先安装 pnpm(或按手动方式走);
 - `pnpm install` 报 peer 版本解析错误 → 检查 profile 的 `pnpm-workspace.yaml` 是否被改坏
@@ -112,15 +112,16 @@ pnpm install
    - 拖动标题栏移动面板;滑杆调透明度;`✕` 关闭。
 
 **失败处理**:
-- 按钮不出现 → 检查 profile 的依赖和 cordis.patch.yml 是否都生效(`pnpm list --dir ~/.dsh/profiles/web` 看依赖);
+- 按钮不出现 → 检查 profile 的依赖和 `dsh.profile.bundles` 是否都生效(`pnpm list --dir ~/.dsh/profiles/web` 看依赖,`cat ~/.dsh/profiles/web/package.json` 看 bundles);
 - 面板报错 → 查看 harness 启动日志或浏览器控制台,重点看 `dsh-workspace-dir/list` 路由是否注册(可用 `curl http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>` 测试)。
 
 ## 故障排查速查
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| 按钮不出现 | 插件未加载 | 检查 profile 依赖 + patch 行 + 重启 |
-| `list` 路由 404 | Host 半未加载 | 检查 patch 行 `name: dsh-workspace-dir` 拼写 |
+| 按钮不出现 | 插件未加载 | 检查 profile 依赖 + `dsh.profile.bundles` + 重启 |
+| 启动报 `duplicate loader entry id: workspace-dir` | 手动 patch 行与 bundle 层重复插入同 id | 删除 profile `cordis.patch.yml` 里的手动 `workspace-dir` 行(bundle 已自动注册) |
+| `list` 路由 404 | Host 半未加载 | 检查 bundle 层 patch(仓库 `cordis.patch.yml`)里 `name: dsh-workspace-dir` 拼写 |
 | `dsh plugin add` 报包找不到 | 用了包名而非本地路径 | 用 `file:<本地克隆路径>`(本项目未发布 npm) |
 | `pnpm install` 报 peer 版本 | profile 的 `autoInstallPeers` 被改 | 恢复 `autoInstallPeers: false`(由 dsh 生成) |
 | 展开报 `directory browse failed` | 用了旧版代码 | 重新克隆或重新构建(见文末) |
@@ -128,9 +129,11 @@ pnpm install
 
 ## 卸载
 
-1. 从 `~/.dsh/profiles/web/cordis.patch.yml` 删除 `workspace-dir` 行;
-2. `dsh plugin --profile web remove dsh-workspace-dir`(或手动从 profile 的 `package.json` 删除依赖后 `pnpm install`);
-3. 重启 harness。
+1. `dsh plugin --profile web remove dsh-workspace-dir`
+   —— 一条命令同时移除依赖和 `dsh.profile.bundles` 里的 bundle 层
+   (或手动从 profile 的 `package.json` 删除依赖后 `pnpm install`,再手动把
+   `dsh-workspace-dir` 从 `dsh.profile.bundles` 移除);
+2. 重启 harness。
 
 ---
 
@@ -209,6 +212,16 @@ pnpm install
 - 客户端类型:`IWorkspaces` 从 `@deepseek-ai/dsh-client-runtime/client` 导出,
   用 `ctx.get('workspaces')` 获取(可选服务,判空)。
 
+### 7. bundle 形态:同 id 双重插入会 `duplicate loader entry id` 硬失败
+
+- 插件升级为 bundle 形态后,`dsh plugin` 的 reconcile 把插件自动写进
+  `dsh.profile.bundles`,bundle 层(仓库 `cordis.patch.yml`)里 `id: workspace-dir`
+  自动注册,无需手动补行。
+- 若 profile 的 `cordis.patch.yml` 里还残留**手动加**的 `workspace-dir` 行,
+  配置合并后 loader 会抛 `duplicate loader entry id: workspace-dir`
+  (`vendor/loader/src/config/group.ts`),harness 启动即失败。
+- 迁移旧安装时**必须删除手动行**,只留 bundle 层;卸载只需 `dsh plugin remove`。
+
 ## 完成后
 
 - 向用户报告:安装成功、在哪里看到了"目录"按钮、如何卸载;
@@ -269,7 +282,8 @@ ls
 ```
 
 This repository should contain: `src/`, `lib/` (build artifacts, committed),
-`package.json`, `tsdown.config.ts`, and this file.
+`package.json`, `cordis.patch.yml` (the bundle patch layer),
+`tsdown.config.ts`, and this file.
 
 ## Step 1: Detect the harness environment (critical fork)
 
@@ -309,13 +323,19 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
 > plugin's peer deps (`@deepseek-ai/*`, `react`) are provided at runtime by the
 > harness installation — they are **not** resolved from npm at install time.
 >
+> This plugin is a **bundle**: its `dsh.bundle.patch` (in `package.json`)
+> points at the repo's own `cordis.patch.yml`. After pnpm finishes, `dsh plugin`
+> runs a reconcile that writes any dependency declaring `dsh.bundle` into the
+> profile's `dsh.profile.bundles` array (in the profile's `package.json`) —
+> **no manual edit** of the profile's `cordis.patch.yml` is needed.
+>
 > ⚠️ **This project is NOT published to npm**: you must install it with a
 > `file:` spec pointing at the **local clone**. Do not try
 > `dsh plugin add dsh-workspace-dir` or `npm install dsh-workspace-dir` — the
 > package does not exist on the registry and those will fail.
 
 1. Add this repo as a profile dependency with the harness plugin command
-   (writes `package.json` automatically):
+   (writes `package.json` and registers the profile bundle automatically):
 
 ```sh
 dsh plugin --profile web add file:<absolute path to this repo>
@@ -324,26 +344,19 @@ dsh plugin --profile web add file:<absolute path to this repo>
 > If `dsh plugin` is unavailable, fall back to the manual way: edit
 > `~/.dsh/profiles/web/package.json`, add
 > `"dsh-workspace-dir": "file:<absolute path to this repo>"` to `dependencies`,
-> then run `pnpm install` in the profile directory.
+> run `pnpm install` in the profile directory, then run
+> `dsh plugin --profile web install` to trigger the reconcile (or add
+> `dsh-workspace-dir` to `dsh.profile.bundles` in the profile's `package.json`
+> yourself).
 
-2. Edit `~/.dsh/profiles/web/cordis.patch.yml` and append (required —
-   `dsh plugin add` does not write this row):
-
-```yaml
-- insert:
-    - id: workspace-dir
-      name: dsh-workspace-dir
-```
-
-3. If you took the manual path in step 1, install in the profile directory:
-
-```sh
-cd ~/.dsh/profiles/web
-pnpm install
-```
+> ⚠️ **Do not** manually add a `workspace-dir` row to the profile's
+> `cordis.patch.yml`: the bundle layer already registers an entry with that id,
+> and the double insert makes the harness fail at startup with
+> `duplicate loader entry id: workspace-dir`.
 
 **Verify**: `ls ~/.dsh/profiles/web/node_modules/dsh-workspace-dir/lib/` should
-contain `index.js` and `client.js`.
+contain `index.js` and `client.js`; `cat ~/.dsh/profiles/web/package.json`
+should list `dsh-workspace-dir` in `dsh.profile.bundles`.
 **Failure handling**:
 - `dsh plugin add` says pnpm is missing → ask the user to install pnpm (or use the manual way);
 - `pnpm install` reports a peer version error → check whether the profile's
@@ -366,8 +379,9 @@ contain `index.js` and `client.js`.
      `✕` closes it.
 
 **Failure handling**:
-- Button missing → check that the profile dependency and the `cordis.patch.yml`
-  row both took effect (`pnpm list --dir ~/.dsh/profiles/web` to inspect);
+- Button missing → check that the profile dependency and `dsh.profile.bundles`
+  both took effect (`pnpm list --dir ~/.dsh/profiles/web` to inspect deps,
+  `cat ~/.dsh/profiles/web/package.json` to inspect bundles);
 - Panel errors → inspect the harness startup log or browser console; verify the
   `dsh-workspace-dir/list` route registered, e.g.
   `curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<absolute path>"`.
@@ -376,8 +390,9 @@ contain `index.js` and `client.js`.
 
 | Symptom | Cause | Handling |
 | --- | --- | --- |
-| Button missing | plugin not loaded | Check profile deps + patch row + restart |
-| `list` route 404 | host half not loaded | Check the patch row `name: dsh-workspace-dir` spelling |
+| Button missing | plugin not loaded | Check profile deps + `dsh.profile.bundles` + restart |
+| Startup fails with `duplicate loader entry id: workspace-dir` | manual patch row and the bundle layer insert the same id | Remove the manual `workspace-dir` row from the profile's `cordis.patch.yml` (the bundle registers it automatically) |
+| `list` route 404 | host half not loaded | Check the `name: dsh-workspace-dir` spelling in the bundle patch (repo `cordis.patch.yml`) |
 | `dsh plugin add` says package not found | used a package name instead of a local path | Use `file:<local clone path>` (this project is not on npm) |
 | `pnpm install` peer version error | profile `autoInstallPeers` changed | Restore `autoInstallPeers: false` (generated by dsh) |
 | Expand reports `directory browse failed` | stale code | Re-clone or rebuild (see below) |
@@ -385,10 +400,11 @@ contain `index.js` and `client.js`.
 
 ## Uninstall
 
-1. Remove the `workspace-dir` row from `~/.dsh/profiles/web/cordis.patch.yml`;
-2. `dsh plugin --profile web remove dsh-workspace-dir` (or remove the dependency
-   from the profile's `package.json` manually and run `pnpm install`);
-3. Restart the harness.
+1. `dsh plugin --profile web remove dsh-workspace-dir` — one command removes
+   the dependency **and** its bundle layer from `dsh.profile.bundles` (or
+   remove the dependency from the profile's `package.json` manually, run
+   `pnpm install`, and remove `dsh-workspace-dir` from `dsh.profile.bundles`);
+2. Restart the harness.
 
 ---
 
@@ -488,6 +504,18 @@ Chinese path, migrate to an English directory before continuing.
   all handled by the official opener.
 - Client type: `IWorkspaces` is exported from `@deepseek-ai/dsh-client-runtime/client`;
   get it via `ctx.get('workspaces')` (optional service — null-check it).
+
+### 7. Bundle form: double-inserting the same id fails hard with `duplicate loader entry id`
+
+- Since the plugin is a bundle, `dsh plugin`'s reconcile writes it into
+  `dsh.profile.bundles` automatically, and the bundle layer (repo
+  `cordis.patch.yml`) registers `id: workspace-dir` on its own — no manual row.
+- If the profile's `cordis.patch.yml` still contains a **manually added**
+  `workspace-dir` row, the merged config makes the loader throw
+  `duplicate loader entry id: workspace-dir`
+  (`vendor/loader/src/config/group.ts`) and the harness fails to start.
+- When migrating an existing install, **remove the manual row** and keep only
+  the bundle layer; uninstalling is a single `dsh plugin remove`.
 
 ## After you finish
 

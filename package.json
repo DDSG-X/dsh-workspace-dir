@@ -1,6 +1,6 @@
 {
   "name": "dsh-workspace-dir",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "description": "DeepSeek Harness plugin: show the current conversation's working directory in a draggable directory panel with adjustable opacity.",
   "type": "module",
   "main": "lib/index.js",
@@ -11,11 +11,13 @@
     "./client": {
       "default": "./lib/client.js"
     },
+    "./cordis.patch.yml": "./cordis.patch.yml",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
     "lib/client.js",
+    "cordis.patch.yml",
     "README.md"
   ],
   "scripts": {
@@ -30,6 +32,9 @@
         "@deepseek-ai/dsh-client-ui-layout"
       ],
       "platform": "web"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
     }
   },
   "license": "MIT",
