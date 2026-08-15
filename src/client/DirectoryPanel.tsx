@@ -203,6 +203,9 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   const [entries, setEntries] = useState<DirEntryJson[] | undefined>(undefined)
   const [error, setError] = useState<string | undefined>(undefined)
   const [openError, setOpenError] = useState<string | undefined>(undefined)
+  /** Transient note after a successful OS-file-manager open (Windows may not raise the window). */
+  const [openNote, setOpenNote] = useState<string | undefined>(undefined)
+  const openNoteTimerRef = useRef<number | undefined>(undefined)
   /** Hovered / pressed interactive element key (feedback state). */
   const [hoverKey, setHoverKey] = useState<string | null>(null)
   const [activeKey, setActiveKey] = useState<string | null>(null)
@@ -212,14 +215,26 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   const dragRef = useRef<{ startX: number; startY: number; originX: number; originY: number } | null>(null)
 
   // Reset navigation when the session's working directory changes.
-  useEffect(() => { setPath(undefined); setError(undefined); setOpenError(undefined) }, [cwd])
+  useEffect(() => {
+    setPath(undefined); setError(undefined); setOpenError(undefined); setOpenNote(undefined)
+  }, [cwd])
+
+  // Clear any pending open-note timer on unmount.
+  useEffect(() => () => {
+    if (openNoteTimerRef.current !== undefined) window.clearTimeout(openNoteTimerRef.current)
+  }, [])
 
   const visible = path ?? cwd
 
   /** Open a directory in the OS file manager; surface failures inline. */
   const onOpenDirectory = (target: string): void => {
     setOpenError(undefined)
-    openDirectory(target).catch((reason: unknown) => {
+    setOpenNote(undefined)
+    openDirectory(target).then(() => {
+      setOpenNote('已在文件管理器中打开；若窗口未置前，请点任务栏图标')
+      if (openNoteTimerRef.current !== undefined) window.clearTimeout(openNoteTimerRef.current)
+      openNoteTimerRef.current = window.setTimeout(() => setOpenNote(undefined), 4000)
+    }).catch((reason: unknown) => {
       setOpenError(reason instanceof Error ? reason.message : String(reason))
     })
   }
@@ -429,6 +444,9 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
 
         {openError !== undefined && (
           <div style={{ ...childRow, cursor: 'default', color: T.error }}>⚠ {openError}</div>
+        )}
+        {openNote !== undefined && (
+          <div style={{ ...childRow, cursor: 'default', color: T.labelDim }}>ℹ {openNote}</div>
         )}
 
         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: '4px', paddingTop: '4px' }}>
