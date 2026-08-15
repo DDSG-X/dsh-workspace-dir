@@ -191,6 +191,28 @@ export function DirectoryToggle(_props: DirectoryToggleProps): React.ReactElemen
   )
 }
 
+/** Feather-style external-link icon (24 viewBox, currentColor stroke) — matches the folder icon. */
+export function OpenExternalIcon({ size = 13 }: { size?: number }): React.ReactElement {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+  )
+}
+
 /** The draggable floating directory panel in shell.overlay. */
 export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement | null {
   const { useSessions, listDirectory, openDirectory } = props
@@ -556,7 +578,10 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
       </div>
     </div>
     {openNote !== undefined && (
-      <div role="status" style={toastStyle}>✅ {openNote}</div>
+      <div role="status" style={{ ...toastStyle, display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <OpenExternalIcon size={13} />
+        <span>{openNote}</span>
+      </div>
     )}
     </>
   )
