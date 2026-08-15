@@ -1,0 +1,10 @@
+packages:
+  - .
+
+# Standalone repo settings: keep the package self-installable without the
+# harness workspace. The @deepseek-ai/* peer deps are provided at runtime by
+# the harness installation (the profile's hoisted linker falls through to the
+# installation's node_modules), so they must NOT be auto-installed from npm —
+# some of them are vendored in the harness and do not exist on the registry.
+nodeLinker: hoisted
+autoInstallPeers: false

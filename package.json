@@ -4,14 +4,11 @@
   "description": "DeepSeek Harness plugin: show the current conversation's working directory in a draggable directory panel with adjustable opacity.",
   "type": "module",
   "main": "lib/index.js",
-  "types": "lib/types/index.d.ts",
   "exports": {
     ".": {
-      "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
     "./client": {
-      "types": "./lib/types/client/index.d.ts",
       "default": "./lib/client.js"
     },
     "./package.json": "./package.json"
@@ -19,12 +16,10 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "lib/types/**/*.d.ts",
     "README.md"
   ],
   "scripts": {
-    "build": "tsdown && tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit",
+    "build": "tsdown",
     "watch": "tsdown --watch"
   },
   "dsh": {
@@ -55,16 +50,8 @@
     "react": "^18.2.0"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "^0.1.0-rc.5",
-    "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.5",
-    "@deepseek-ai/dsh-client-ui-conversation": "^0.1.0-rc.5",
-    "@deepseek-ai/dsh-client-ui-layout": "^0.1.0-rc.5",
-    "@deepseek-ai/dsh-client-ui-slots": "^0.1.0-rc.5",
-    "@deepseek-ai/dsh-fs": "^0.1.0-rc.5",
-    "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.5",
     "@types/react": "^18.3.1",
     "react": "^18.2.0",
-    "tsdown": "^0.22.2",
-    "typescript": "^6.0.3"
+    "tsdown": "^0.22.2"
   }
 }
