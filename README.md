@@ -57,8 +57,9 @@ AI 会自己完成:克隆仓库 → 读取安装引导(`AI-INSTALL.md`)→ 判�
 > 本仓库**自带构建产物**(`lib/`),克隆后无需构建,可直接安装。只有修改源码的开发者才需要重新构建。
 >
 > ⚠️ **本项目未发布到 npm**:请**不要**用包名安装(如 `npm install dsh-workspace-dir`、
-> `dsh plugin add dsh-workspace-dir` 都会因 npm 上找不到该包而失败)。安装**只能**
-> 使用本地克隆路径(上面第 1 步的 `git clone` 目录,`dsh plugin add` 用 `file:` 指向它)。
+> `dsh plugin add dsh-workspace-dir` 都会因 npm 上找不到该包而失败)。安装用
+> **github 源**(`dsh plugin add github:DDSG-X/dsh-workspace-dir`,一条命令装完即激活);
+> 离线/开发场景才用 `file:` 指向本地克隆目录。
 
 ### AI 安装效果示例
 
@@ -74,7 +75,7 @@ AI:
      → 发现 web profile(已初始化)
 
   ✅ 第 2 步 安装插件到 web profile
-     → dsh plugin add 本地路径 完成(依赖已写入 profile package.json)
+     → dsh plugin add github: 源 完成(依赖已写入 profile package.json)
      → reconcile 自动把插件加入 dsh.profile.bundles(无需手动补行)
      → pnpm install 完成
 
@@ -115,22 +116,23 @@ cd dsh-workspace-dir
 ### 第 2 步:安装到你的 web profile
 
 用 harness 的插件管理命令添加依赖(自动写入 profile 的 `package.json`,
-并把插件注册为 profile bundle):
+并把插件注册为 profile bundle)。**推荐用 github 源,一条命令装完即激活**:
 
 ```sh
-# 用绝对路径指向克隆下来的插件目录;Windows 示例:
-dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir
+dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
 > ⚠️ 本插件**未发布到 npm**——不要用包名安装(如 `dsh plugin add dsh-workspace-dir`
-> 或 `npm install dsh-workspace-dir` 会失败),**必须**用 `file:` 指向本地克隆目录。
+> 或 `npm install dsh-workspace-dir` 会失败)。github 源安装直接拉取本仓库;
+> 离线/本地开发场景才改用 `file:` 指向本地克隆目录:
+> `dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir`。
 
 > 本插件是 **bundle 形态**:`package.json` 声明了 `dsh.bundle.patch`(指向仓库自带的
 > `cordis.patch.yml`)。`dsh plugin add` 装完依赖后会自动 reconcile,把插件写进
 > profile 的 `dsh.profile.bundles`——**不需要**再手动编辑 `cordis.patch.yml`。
 
 > 没有 `dsh` 命令?也可以手动编辑 `~/.dsh/profiles/web/package.json`,在
-> `dependencies` 里加 `"dsh-workspace-dir": "file:D:/绝对路径/dsh-workspace-dir"`,
+> `dependencies` 里加 `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"`,
 > 然后在 profile 目录执行 `pnpm install`,最后执行
 > `dsh plugin --profile web install` 触发 reconcile(或手动把
 > `dsh-workspace-dir` 加进 profile `package.json` 的 `dsh.profile.bundles`)。
@@ -145,12 +147,12 @@ dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir
 ### 更新插件
 
 ```sh
-cd /path/to/dsh-workspace-dir
-git pull          # 拉取最新代码(仓库自带构建产物,无需重新构建)
+dsh plugin --profile web update dsh-workspace-dir
 ```
 
-profile 的 `file:` 依赖直接读取克隆目录,拉到新文件后重启 harness 即可生效
-(若安装时 profile 里是实体副本而非链接,重新执行第 2 步的安装命令)。
+github 源安装的依赖,`dsh plugin update` 会拉取仓库最新代码并触发 reconcile
+(仓库自带构建产物 `lib/`,无需重新构建)。若当初是用 `file:` 本地路径装的,
+则改为在克隆目录 `git pull` 后重启 harness 生效。
 
 ## 故障排查
 
@@ -159,7 +161,7 @@ profile 的 `file:` 依赖直接读取克隆目录,拉到新文件后重启 harn
 | 按钮/面板不出现 | 插件未加载 | 检查 profile 的 package.json 依赖和 `dsh.profile.bundles` 是否都配好 |
 | harness 启动报 `duplicate loader entry id: workspace-dir` | 手动 patch 行与 bundle 层重复插入同一 id | 删除 profile `cordis.patch.yml` 里的手动 `workspace-dir` 行(bundle 形态会自动注册,手动行会与 bundle 层冲突) |
 | 安装时报 peer 依赖版本找不到 | harness 是 npm 安装版 | 改用源码运行的 harness(见手动安装节说明) |
-| 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(重新构建或重新克隆) |
+| 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(`dsh plugin --profile web update dsh-workspace-dir`,或本地克隆 `git pull` + 重启) |
 | 面板文字不可见 | 旧版用错主题变量 | 更新代码(`--dsw-alias-*` 已修复) |
 
 ## 卸载

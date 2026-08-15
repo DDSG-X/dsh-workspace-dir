@@ -70,20 +70,23 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
 > (profile `package.json` 里的 `dsh.profile.bundles` 数组)——**不需要**手动编辑
 > profile 的 `cordis.patch.yml`。
 >
-> ⚠️ **本项目未发布到 npm**:安装必须用 `file:` 指向**本地克隆目录**。
-> 不要尝试 `dsh plugin add dsh-workspace-dir` 或 `npm install dsh-workspace-dir`
-> (npm 上找不到该包,会失败)。
+> ⚠️ **本项目未发布到 npm**:不要尝试 `dsh plugin add dsh-workspace-dir` 或
+> `npm install dsh-workspace-dir`(npm 上找不到该包,会失败)。安装用
+> **github 源**(`dsh plugin add github:DDSG-X/dsh-workspace-dir`,一条命令装完即激活);
+> 离线/本地开发场景才用 `file:` 指向本地克隆目录。
 
 1. 用 harness 的插件管理命令把本仓库加为 profile 依赖(自动写 `package.json`,
-   并自动注册为 profile bundle):
+   并自动注册为 profile bundle)。**推荐 github 源,一条命令装完即激活**:
 
 ```sh
-dsh plugin --profile web add file:<本仓库绝对路径>
+dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
+> 离线/本地开发时才用 `file:` 指向本地克隆:
+> `dsh plugin --profile web add file:<本仓库绝对路径>`。
 > 若 `dsh plugin` 不可用(命令不存在/报错),退回手动方式:
 > 编辑 `~/.dsh/profiles/web/package.json`,在 `dependencies` 加
-> `"dsh-workspace-dir": "file:<本仓库绝对路径>"`,然后在 profile 目录 `pnpm install`,
+> `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"`,然后在 profile 目录 `pnpm install`,
 > 最后执行 `dsh plugin --profile web install` 触发 reconcile(或手动把
 > `dsh-workspace-dir` 加进 profile `package.json` 的 `dsh.profile.bundles`)。
 
@@ -122,7 +125,7 @@ dsh plugin --profile web add file:<本仓库绝对路径>
 | 按钮不出现 | 插件未加载 | 检查 profile 依赖 + `dsh.profile.bundles` + 重启 |
 | 启动报 `duplicate loader entry id: workspace-dir` | 手动 patch 行与 bundle 层重复插入同 id | 删除 profile `cordis.patch.yml` 里的手动 `workspace-dir` 行(bundle 已自动注册) |
 | `list` 路由 404 | Host 半未加载 | 检查 bundle 层 patch(仓库 `cordis.patch.yml`)里 `name: dsh-workspace-dir` 拼写 |
-| `dsh plugin add` 报包找不到 | 用了包名而非本地路径 | 用 `file:<本地克隆路径>`(本项目未发布 npm) |
+| `dsh plugin add` 报包找不到 | 用了包名而非有效源 | 用 `github:DDSG-X/dsh-workspace-dir`(或离线 `file:<本地克隆路径>`)(本项目未发布 npm) |
 | `pnpm install` 报 peer 版本 | profile 的 `autoInstallPeers` 被改 | 恢复 `autoInstallPeers: false`(由 dsh 生成) |
 | 展开报 `directory browse failed` | 用了旧版代码 | 重新克隆或重新构建(见文末) |
 | 路径出现乱码字符 | 中文路径 | 迁移到英文路径 |
@@ -175,14 +178,17 @@ dsh plugin --profile web add file:<本仓库绝对路径>
 
 - **改了源码记得重新构建并提交 `lib/`**(本仓库把构建产物入库,克隆即用)。
 
-### 4. 安装源更新：用 git pull，不要手动复制文件
+### 4. 安装/更新：官方 `dsh plugin` + github 源，不要维护本地安装源
 
-- 正式安装源与开发仓库分离时（如安装源 `D:\Software\dsh_plugins\dsh-workspace-dir`、
-  开发源 `D:\Projects\plugins\dsh-workspace-dir`），安装源**本身是 git 克隆**：
-  **先改开发源并提交+push，再在安装源 `git pull`**——构建产物 `lib/` 已入库，拉取即用，
-  无需构建、无需 robocopy 复制。
-- profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**，pull 到新 lib 后刷新页面即生效
-  （`clientModules` 按内容 hash 提供 bundle，自动更新 rev）；若是实体副本则需重新安装。
+- 安装/更新一律用 harness 官方命令 + **github 源**：`dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir`
+  （一条命令装完即激活）、`dsh plugin --profile web update dsh-workspace-dir`——**不需要**本地安装源目录。
+- 早期曾用 `file:` 本地路径依赖 + 独立安装源（如 `D:\Software\dsh_plugins\dsh-workspace-dir`）维护：
+  **已退休**——本地安装源与开发源双目录同步容易不一致，且 `file:` 依赖的更新必须手动改目录内容
+  （`git pull` 安装源目录 + 重启），不如 `dsh plugin update` 一条命令。
+- `github:…` 只跑 `prepare` 不跑 `build`；本仓库 `lib/` 已入库、无 prepare 脚本，git 安装不触发
+  pnpm≥10 的 allowBuilds 关卡。
+- profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**，刷新页面即生效（`clientModules` 按内容
+  hash 提供 bundle，自动更新 rev）；github 源安装/更新后重启 harness 生效。
 
 ### 5. 面板 UI 状态持久化约定（打开状态 + 位置 + 透明度）
 
@@ -329,21 +335,26 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
 > profile's `dsh.profile.bundles` array (in the profile's `package.json`) —
 > **no manual edit** of the profile's `cordis.patch.yml` is needed.
 >
-> ⚠️ **This project is NOT published to npm**: you must install it with a
-> `file:` spec pointing at the **local clone**. Do not try
+> ⚠️ **This project is NOT published to npm**: do not try
 > `dsh plugin add dsh-workspace-dir` or `npm install dsh-workspace-dir` — the
-> package does not exist on the registry and those will fail.
+> package does not exist on the registry and those will fail. Install via the
+> **github source** (`dsh plugin add github:DDSG-X/dsh-workspace-dir` — one
+> command, activated immediately); use a `file:` spec pointing at the **local
+> clone** only for offline/local-development scenarios.
 
 1. Add this repo as a profile dependency with the harness plugin command
-   (writes `package.json` and registers the profile bundle automatically):
+   (writes `package.json` and registers the profile bundle automatically).
+   **Prefer the github source — one command, activated immediately**:
 
 ```sh
-dsh plugin --profile web add file:<absolute path to this repo>
+dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
+> For offline/local development use the local clone instead:
+> `dsh plugin --profile web add file:<absolute path to this repo>`.
 > If `dsh plugin` is unavailable, fall back to the manual way: edit
 > `~/.dsh/profiles/web/package.json`, add
-> `"dsh-workspace-dir": "file:<absolute path to this repo>"` to `dependencies`,
+> `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"` to `dependencies`,
 > run `pnpm install` in the profile directory, then run
 > `dsh plugin --profile web install` to trigger the reconcile (or add
 > `dsh-workspace-dir` to `dsh.profile.bundles` in the profile's `package.json`
@@ -393,7 +404,7 @@ should list `dsh-workspace-dir` in `dsh.profile.bundles`.
 | Button missing | plugin not loaded | Check profile deps + `dsh.profile.bundles` + restart |
 | Startup fails with `duplicate loader entry id: workspace-dir` | manual patch row and the bundle layer insert the same id | Remove the manual `workspace-dir` row from the profile's `cordis.patch.yml` (the bundle registers it automatically) |
 | `list` route 404 | host half not loaded | Check the `name: dsh-workspace-dir` spelling in the bundle patch (repo `cordis.patch.yml`) |
-| `dsh plugin add` says package not found | used a package name instead of a local path | Use `file:<local clone path>` (this project is not on npm) |
+| `dsh plugin add` says package not found | used a bare package name instead of a valid source | Use `github:DDSG-X/dsh-workspace-dir` (or offline `file:<local clone path>`) — this project is not on npm |
 | `pnpm install` peer version error | profile `autoInstallPeers` changed | Restore `autoInstallPeers: false` (generated by dsh) |
 | Expand reports `directory browse failed` | stale code | Re-clone or rebuild (see below) |
 | Garbled characters in paths | Chinese path | Migrate to an English path |
@@ -452,16 +463,24 @@ Chinese path, migrate to an English directory before continuing.
 - **After changing source, rebuild and commit `lib/`** (build artifacts are
   committed so a clone works out of the box).
 
-### 4. Updating the install source: use git pull, never copy files manually
+### 4. Install/update: official `dsh plugin` + github source; do not maintain a local install source
 
-- When the production install source and the dev repo are separate (e.g. install source
-  `D:\Software\dsh_plugins\dsh-workspace-dir`, dev repo `D:\Projects\plugins\dsh-workspace-dir`),
-  the install source **is itself a git clone**: **edit the dev repo, commit and push,
-  then `git pull` in the install source** — build artifacts (`lib/`) are committed, so a
-  pull is immediately usable, no build and no robocopy file copy needed.
-- If the profile's `node_modules/dsh-workspace-dir` is a **junction**, refreshing the page after a
-  pull is enough (`clientModules` serves bundles by content hash and updates the rev
-  automatically); if it is a real copy, re-install instead.
+- Install and update exclusively through the official harness command with the
+  **github source**: `dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir`
+  (one command, activated immediately) and
+  `dsh plugin --profile web update dsh-workspace-dir` — **no local install
+  source directory needed**.
+- Early on we used a `file:` local-path dependency plus a separate install
+  source (e.g. `D:\Software\dsh_plugins\dsh-workspace-dir`): **retired** —
+  keeping a second directory in sync with the dev repo was error-prone, and
+  updating a `file:` dependency meant manually changing the directory contents
+  (`git pull` in the install source + restart) instead of one `dsh plugin update`.
+- `github:…` runs only `prepare`, not `build`; this repo ships `lib/` and has
+  no `prepare` script, so git installs do not hit the pnpm≥10 allowBuilds gate.
+- If the profile's `node_modules/dsh-workspace-dir` is a **junction**, refreshing
+  the page after an update is enough (`clientModules` serves bundles by content
+  hash and updates the rev automatically); after a github-source install/update,
+  restart the harness to activate.
 
 ### 5. Panel UI state persistence (open state + position + opacity)
 
