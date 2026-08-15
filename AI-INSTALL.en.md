@@ -33,7 +33,16 @@ draggable directory panel with adjustable background opacity.
 
 ## Step 0: Confirm the working directory
 
-Check where you are:
+If this repository is **not cloned on this machine yet** (the user asked you to
+clone it directly), clone it to an **English path** (Chinese paths garble under
+pnpm), e.g. the user's home directory or `D:\`:
+
+```sh
+git clone https://github.com/DDSG-X/dsh-workspace-dir.git
+cd dsh-workspace-dir
+```
+
+Then check where you are:
 
 ```sh
 pwd

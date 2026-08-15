@@ -1,8 +1,12 @@
 # dsh-workspace-dir
 
-DeepSeek Harness 插件:查看**当前对话的工作目录**及其文件列表。
+一个 DeepSeek Harness 插件:在会话头部加一个 **"📁 目录"** 按钮,点一下就能弹出
+当前对话工作目录的**文件/子目录列表**——不用切出 harness,边写代码边看项目结构。
 
-会话标题旁新增 **"📁 目录"** 按钮,点击弹出**可拖动、背景透明度可调**的浮动目录面板,显示当前工作目录下的文件和子目录。
+点击后你会看到:一个**可拖动**的浮动面板,列出当前工作目录下的文件和子目录,
+支持点击进入子目录,还能用滑杆调整面板透明度(20%–100%)。
+
+<!-- TODO: 建议放一张效果截图(如 docs/screenshot.png),对陌生用户帮助最大 -->
 
 ## 功能一览
 
@@ -13,25 +17,36 @@ DeepSeek Harness 插件:查看**当前对话的工作目录**及其文件列表�
 
 ## 安装:让 AI 帮你(推荐——本项目的安装就是为这个设计的)
 
-**本项目面向完全不熟悉它的 DeepSeek Harness 用户。** 你不需要知道插件怎么装、
-依赖怎么配、profile 是什么——**你只需要做下面 3 步,剩下的全部交给你的 AI**:
+**本项目面向完全不熟悉它的 DeepSeek Harness 用户。** 你不需要懂插件、依赖、
+profile——**装好它,只需要对你的 AI 说一句话**:
 
-1. 把本仓库克隆到**英文路径**(中文路径会导致 pnpm 乱码,安装会失败):
+> 请把 https://github.com/DDSG-X/dsh-workspace-dir 克隆到英文路径,读取项目里的
+> `AI-INSTALL.md`,按里面的步骤把 `dsh-workspace-dir` 插件安装到我的 harness,
+> 并验证"目录"按钮能正常弹出面板。
+
+AI 会自己完成:克隆仓库 → 读取安装引导(`AI-INSTALL.md`)→ 判断你的 harness
+是源码运行还是 npm 安装 → 检测/初始化 web profile → 把插件装进 profile →
+重启 harness → 验证"目录"按钮。**它只会在你批准时修改你的 profile 文件**;
+遇到环境差异,也会按引导里的故障排查表处理,并把结果汇报给你。
+
+> 英文版引导在 [`AI-INSTALL.en.md`](AI-INSTALL.en.md);对英文 AI 说:
+> "Clone https://github.com/DDSG-X/dsh-workspace-dir to an English path, read
+> `AI-INSTALL.en.md`, install the plugin, then verify the Directory button works."
+
+### 想自己动手?也可以只做 3 步
+
+1. 克隆到**英文路径**(中文路径会导致 pnpm 乱码,安装会失败):
 
    ```sh
    git clone https://github.com/DDSG-X/dsh-workspace-dir.git
    ```
 
-2. 在 DeepSeek Harness 里,把克隆下来的目录打开为 workspace(设为当前工作目录);
+2. 在 DeepSeek Harness 里,把克隆下来的目录设为当前工作目录(workspace);
+   不知道怎么设置就问你的 AI,它会带你操作;
 
-3. 对你的 AI 说下面这句话(中文引导在项目内 `AI-INSTALL.md`,英文版 `AI-INSTALL.en.md`):
+3. 对你的 AI 说:
 
    > 请读取本项目的 `AI-INSTALL.md`,按里面的步骤把 `dsh-workspace-dir` 插件安装到我的 harness,并验证"目录"按钮能正常弹出面板。
-
-AI 会读取引导文件,自动完成:判断你的 harness 是源码运行还是 npm 安装、
-检测/初始化 web profile、把插件装进 profile、重启 harness、验证"目录"按钮。
-**它只会在你批准时修改你的 profile 文件**;遇到任何环境差异,也会按引导里的
-故障排查表处理,并把结果汇报给你。
 
 > 本仓库**自带构建产物**(`lib/`),克隆后无需构建,可直接安装。只有修改源码的开发者才需要重新构建。
 >
@@ -69,10 +84,6 @@ AI:
 
 > AI 的语言、命令风格可能不同,但流程一致:检测 → 安装 → 重启验证 → 汇报。
 > 若某一步失败,引导要求 AI 把错误信息带回来,你可以原样转发给维护者。
-
-> **English**: an English version of the AI install guide is at
-> [`AI-INSTALL.en.md`](AI-INSTALL.en.md). Tell your AI:
-> "Read `AI-INSTALL.en.md` and install this plugin, then verify the Directory button works."
 
 ## 安装(手动,给想自己动手/了解细节的人)
 

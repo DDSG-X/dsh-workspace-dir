@@ -21,7 +21,15 @@
 
 ## 第 0 步:确认工作目录
 
-先确认你在哪个目录:
+如果本仓库**还没有克隆到本机**(用户让你直接克隆),先把它克隆到**英文路径**
+(中文路径会导致 pnpm 乱码),例如用户主目录或 `D:\` 下:
+
+```sh
+git clone https://github.com/DDSG-X/dsh-workspace-dir.git
+cd dsh-workspace-dir
+```
+
+然后确认你在哪个目录:
 
 ```sh
 pwd
