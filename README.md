@@ -34,6 +34,10 @@ AI 会读取引导文件,自动完成:判断你的 harness 是源码运行还是
 故障排查表处理,并把结果汇报给你。
 
 > 本仓库**自带构建产物**(`lib/`),克隆后无需构建,可直接安装。只有修改源码的开发者才需要重新构建。
+>
+> ⚠️ **本项目未发布到 npm**:请**不要**用包名安装(如 `npm install dsh-workspace-dir`、
+> `dsh plugin add dsh-workspace-dir` 都会因 npm 上找不到该包而失败)。安装**只能**
+> 使用本地克隆路径(上面第 1 步的 `git clone` 目录,`dsh plugin add` 用 `file:` 指向它)。
 
 ### AI 安装效果示例
 
@@ -100,6 +104,9 @@ cd dsh-workspace-dir
 dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir
 ```
 
+> ⚠️ 本插件**未发布到 npm**——不要用包名安装(如 `dsh plugin add dsh-workspace-dir`
+> 或 `npm install dsh-workspace-dir` 会失败),**必须**用 `file:` 指向本地克隆目录。
+
 > 没有 `dsh` 命令?也可以手动编辑 `~/.dsh/profiles/web/package.json`,在
 > `dependencies` 里加 `"dsh-workspace-dir": "file:D:/绝对路径/dsh-workspace-dir"`,
 > 然后在 profile 目录执行 `pnpm install`。
@@ -120,6 +127,16 @@ dsh plugin --profile web add file:D:/path/to/dsh-workspace-dir
 
 - 打开任意会话 → 标题旁出现 **"目录"** 按钮
 - 点击弹出目录面板;拖动标题栏移动;滑杆调透明度;`✕` 关闭
+
+### 更新插件
+
+```sh
+cd /path/to/dsh-workspace-dir
+git pull          # 拉取最新代码(仓库自带构建产物,无需重新构建)
+```
+
+profile 的 `file:` 依赖直接读取克隆目录,拉到新文件后重启 harness 即可生效
+(若安装时 profile 里是实体副本而非链接,重新执行第 2 步的安装命令)。
 
 ## 故障排查
 

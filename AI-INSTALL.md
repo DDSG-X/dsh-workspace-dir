@@ -61,6 +61,10 @@ ls ~/.dsh/profiles/web/package.json 2>/dev/null && echo "PROFILE_EXISTS"
 > `pnpm-workspace.yaml` 由 `dsh` 自动生成,含 `nodeLinker: hoisted` 与
 > `autoInstallPeers: false`,所以插件的 peer 依赖(`@deepseek-ai/*`、`react`)在
 > 运行时由 harness 安装提供,安装阶段**不需要**也从 npm 解析它们。
+>
+> ⚠️ **本项目未发布到 npm**:安装必须用 `file:` 指向**本地克隆目录**。
+> 不要尝试 `dsh plugin add dsh-workspace-dir` 或 `npm install dsh-workspace-dir`
+> (npm 上找不到该包,会失败)。
 
 1. 用 harness 的插件管理命令把本仓库加为 profile 依赖(自动写 `package.json`):
 
@@ -115,6 +119,7 @@ pnpm install
 | --- | --- | --- |
 | 按钮不出现 | 插件未加载 | 检查 profile 依赖 + patch 行 + 重启 |
 | `list` 路由 404 | Host 半未加载 | 检查 patch 行 `name: dsh-workspace-dir` 拼写 |
+| `dsh plugin add` 报包找不到 | 用了包名而非本地路径 | 用 `file:<本地克隆路径>`(本项目未发布 npm) |
 | `pnpm install` 报 peer 版本 | profile 的 `autoInstallPeers` 被改 | 恢复 `autoInstallPeers: false`(由 dsh 生成) |
 | 展开报 `directory browse failed` | 用了旧版代码 | 重新克隆或重新构建(见文末) |
 | 路径出现乱码字符 | 中文路径 | 迁移到英文路径 |
