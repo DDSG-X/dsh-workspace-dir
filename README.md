@@ -22,12 +22,15 @@
 
 ## 快速开始(最正规,一条命令装完即激活)
 
+> **环境要求**:本插件要求 **源码运行的 harness**(官方 README 推荐方式)——
+> npm 安装版(`npx @deepseek-ai/dsh web`)的 peer 依赖由源码仓库提供、npm 上不完整,
+> 可能装不上。还需要 `pnpm`(装完 harness 一般已有)。
+>
 > 源码运行的 harness,`dsh` 是工作区脚本而非全局命令,**需在 harness 源码目录用
-> `pnpm dsh` 调用**(示例 `cd D:/Software/deepseek-harness`);若你的 `dsh` 在
-> PATH 中(全局安装版),直接去掉 `pnpm` 前缀。
+> `pnpm dsh` 调用**;若你的 `dsh` 在 PATH 中(全局安装版),直接去掉 `pnpm` 前缀。
 
 ```sh
-cd /path/to/deepseek-harness    # ← 你的 harness 源码目录
+cd /path/to/deepseek-harness    # ← 你的 harness 源码目录(Windows 示例: cd D:\deepseek-harness)
 pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 ```
 
@@ -39,6 +42,8 @@ pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 pnpm dsh plugin --profile web update dsh-workspace-dir    # 更新
 pnpm dsh plugin --profile web remove dsh-workspace-dir    # 卸载
 curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"   # 验证:返回 JSON 文件列表即正常
+# Windows PowerShell 里 curl 是别名,请用 curl.exe:
+# curl.exe "http://127.0.0.1:3080/dsh-workspace-dir/list?path=D:/your/dir"
 ```
 
 > ⚠️ **本项目未发布到 npm**:不要用包名安装(`npm install dsh-workspace-dir`、
@@ -66,15 +71,16 @@ AI 会自己完成:克隆仓库 → 读取安装引导(`AI-INSTALL.md`)→ 判�
 > "Clone https://github.com/DDSG-X/dsh-workspace-dir to an English path, read
 > the English section of `AI-INSTALL.md`, install the plugin, then verify the Directory button works."
 
-### 想自己动手?也可以只做 3 步
+### 备选:也可以只做 3 步(仍然让 AI 装)
 
-1. 克隆到**英文路径**(中文路径会导致 pnpm 乱码,安装会失败):
+1. 克隆到**英文路径**(目录名含中文会导致 pnpm 乱码,安装会失败):
 
    ```sh
    git clone https://github.com/DDSG-X/dsh-workspace-dir.git
    ```
 
-2. 在 DeepSeek Harness 里,把克隆下来的目录设为当前工作目录(workspace);
+2. 在 DeepSeek Harness 里,把克隆下来的目录设为当前工作目录(workspace)
+   —— 这样 AI 才能读到克隆下来的 `AI-INSTALL.md` 并操作这个目录;
    不知道怎么设置就问你的 AI,它会带你操作;
 
 3. 对你的 AI 说:
@@ -102,7 +108,7 @@ AI:
      → 发现 web profile(已初始化)
 
   ✅ 第 2 步 安装插件到 web profile
-     → dsh plugin add github: 源 完成(依赖已写入 profile package.json)
+     → dsh plugin add(github 源)完成,依赖已写入 profile package.json
      → reconcile 自动把插件加入 dsh.profile.bundles(无需手动补行)
      → pnpm install 完成
 
@@ -122,9 +128,7 @@ AI:
 ## 安装(手动,给想自己动手/了解细节的人)
 
 > 一般用户不需要看这节——**AI 安装(上一节)会自动处理一切**。
-> 另外请注意:本插件目前要求 **源码运行的 harness**(官方 README 推荐方式)。
-> 如果你的 harness 是 npm 安装的(`npx @deepseek-ai/dsh web`),插件的 peer 依赖
-> 由源码仓库提供、npm 上不完整,可能装不上——建议按官方 README 从源码运行。
+> 环境要求与快速开始相同:源码运行的 harness + `pnpm`(见「快速开始」)。
 
 > 本插件是 **out-of-tree 插件**:依赖 profile 的 hoisted linker,缺失的 peer
 > 依赖(`@deepseek-ai/*`、`react` 等)在运行时由 harness 安装提供,不需要也不
@@ -159,7 +163,7 @@ pnpm dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 > `cordis.patch.yml`)。`pnpm dsh plugin add` 装完依赖后会自动 reconcile,把插件写进
 > profile 的 `dsh.profile.bundles`——**不需要**再手动编辑 `cordis.patch.yml`。
 
-> 没有 `dsh` 命令?也可以手动编辑 `~/.dsh/profiles/web/package.json`,在
+> 无法用 `pnpm dsh` 调用?也可以手动编辑 `~/.dsh/profiles/web/package.json`,在
 > `dependencies` 里加 `"dsh-workspace-dir": "github:DDSG-X/dsh-workspace-dir"`,
 > 然后在 profile 目录执行 `pnpm install`,最后执行
 > `pnpm dsh plugin --profile web install` 触发 reconcile(或手动把
@@ -186,7 +190,7 @@ github 源安装的依赖,`pnpm dsh plugin update` 会拉取仓库最新代码�
 
 | 现象 | 原因 | 解决 |
 | --- | --- | --- |
-| 按钮/面板不出现 | 插件未加载 | 检查 profile 的 package.json 依赖和 `dsh.profile.bundles` 是否都配好 |
+| 按钮/面板不出现 | 插件未加载 | 检查 `~/.dsh/profiles/web/package.json` 的依赖和 `dsh.profile.bundles` 是否都配好,然后重启 |
 | harness 启动报 `duplicate loader entry id: workspace-dir` | 手动 patch 行与 bundle 层重复插入同一 id | 删除 profile `cordis.patch.yml` 里的手动 `workspace-dir` 行(bundle 形态会自动注册,手动行会与 bundle 层冲突) |
 | 安装时报 peer 依赖版本找不到 | harness 是 npm 安装版 | 改用源码运行的 harness(见手动安装节说明) |
 | 展开报 `directory browse failed` | 用了旧版插件 | 更新到最新代码(`pnpm dsh plugin --profile web update dsh-workspace-dir`,或本地克隆 `git pull` + 重启) |
