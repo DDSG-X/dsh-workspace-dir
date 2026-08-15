@@ -21,11 +21,50 @@ DeepSeek Harness 插件:查看**当前对话的工作目录**及其文件列表�
    git clone https://github.com/DDSG-X/dsh-workspace-dir.git
    ```
 
-2. 对你的 AI 说:
+2. 对你的 AI 说(中文版引导:项目内 `AI-INSTALL.md`;英文版:`AI-INSTALL.en.md`):
 
    > 请读取本项目的 `AI-INSTALL.md`,按里面的步骤把 `dsh-workspace-dir` 插件安装到我的 harness,并验证"目录"按钮能正常弹出面板。
 
 AI 会自动完成环境检测、构建、profile 配置、重启验证。安装过程遇到任何环境差异,AI 也会按引导里的故障排查表处理。
+
+### AI 安装效果示例
+
+你只需要克隆仓库、说一句话,然后 AI 大致会这样工作(实际输出会因环境和模型而异):
+
+```text
+你:请读取本项目的 AI-INSTALL.md,把 dsh-workspace-dir 插件安装到我的
+    harness,并验证"目录"按钮能正常弹出面板。
+
+AI:
+  ✅ 第 1 步 检测环境
+     → 发现源码 checkout: D:/Software/deepseek-harness
+     → 发现 web profile: C:/Users/junre/.dsh/profiles/web
+
+  ✅ 第 2 步 构建插件
+     → pnpm install 完成,peer 依赖解析 OK
+     → pnpm build 完成,lib/index.js + lib/client.js 已生成
+
+  ✅ 第 3 步 安装到 web profile
+     → 在 package.json 添加依赖 dsh-workspace-dir
+     → 在 cordis.patch.yml 注册 workspace-dir 行
+     → pnpm install 完成
+
+  ✅ 第 4 步 重启 harness 并验证
+     → 重启完成,端口 3080 就绪
+     → 会话标题旁出现"目录"按钮
+     → 点击弹出目录面板,显示 D:/Projects/插件 的文件列表
+     → 拖动/透明度/关闭均正常
+
+  安装成功!使用方式:打开任意会话 → 点标题旁"目录"按钮。
+  卸载:告诉我,或按 AI-INSTALL.md 的卸载章节操作。
+```
+
+> AI 的语言、命令风格可能不同,但流程一致:检测 → 构建 → 安装 → 重启验证 → 汇报。
+> 若某一步失败,引导要求 AI 把错误信息带回来,你可以原样转发给维护者。
+
+> **English**: an English version of the AI install guide is at
+> [`AI-INSTALL.en.md`](AI-INSTALL.en.md). Tell your AI:
+> "Read `AI-INSTALL.en.md` and install this plugin, then verify the Directory button works."
 
 ## 安装(手动,给想自己动手的人)
 
