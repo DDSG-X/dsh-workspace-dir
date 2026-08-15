@@ -172,12 +172,14 @@ pnpm install
 
 - **改了源码记得重新构建并提交 `lib/`**(本仓库把构建产物入库,克隆即用)。
 
-### 4. 安装源同步
+### 4. 安装源更新：用 git pull，不要手动复制文件
 
-- 正式安装源与开发仓库分离时(如安装源 `D:\Software\dsh_plugins\dsh-workspace-dir`、
-  开发源 `D:\Projects\plugins\dsh-workspace-dir`),**先改开发源并提交 git,再同步到安装源**。
-- profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**,构建后刷新页面即生效
-  (`clientModules` 按内容 hash 提供 bundle,自动更新 rev);若是实体副本则需手动复制 lib。
+- 正式安装源与开发仓库分离时（如安装源 `D:\Software\dsh_plugins\dsh-workspace-dir`、
+  开发源 `D:\Projects\plugins\dsh-workspace-dir`），安装源**本身是 git 克隆**：
+  **先改开发源并提交+push，再在安装源 `git pull`**——构建产物 `lib/` 已入库，拉取即用，
+  无需构建、无需 robocopy 复制。
+- profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**，pull 到新 lib 后刷新页面即生效
+  （`clientModules` 按内容 hash 提供 bundle，自动更新 rev）；若是实体副本则需重新安装。
 
 ### 5. 面板 UI 状态持久化约定（位置 + 透明度）
 
@@ -426,14 +428,16 @@ Chinese path, migrate to an English directory before continuing.
 - **After changing source, rebuild and commit `lib/`** (build artifacts are
   committed so a clone works out of the box).
 
-### 4. Keeping the install source in sync
+### 4. Updating the install source: use git pull, never copy files manually
 
 - When the production install source and the dev repo are separate (e.g. install source
   `D:\Software\dsh_plugins\dsh-workspace-dir`, dev repo `D:\Projects\plugins\dsh-workspace-dir`),
-  **edit the dev repo and commit git first, then sync to the install source**.
+  the install source **is itself a git clone**: **edit the dev repo, commit and push,
+  then `git pull` in the install source** — build artifacts (`lib/`) are committed, so a
+  pull is immediately usable, no build and no robocopy file copy needed.
 - If the profile's `node_modules/dsh-workspace-dir` is a **junction**, refreshing the page after a
-  rebuild is enough (`clientModules` serves bundles by content hash and updates the rev
-  automatically); if it is a real copy, copy `lib/` over manually.
+  pull is enough (`clientModules` serves bundles by content hash and updates the rev
+  automatically); if it is a real copy, re-install instead.
 
 ### 5. Panel UI state persistence (position + opacity)
 
