@@ -52,8 +52,10 @@ const DEFAULT_POS = { x: 272, y: 64 }
 /** localStorage keys for panel UI state (survives harness restarts). */
 const STORE_POS_KEY = 'dsw-workspace-dir:panelPos'
 const STORE_OPACITY_KEY = 'dsw-workspace-dir:panelOpacity'
-const OPACITY_MIN = 0.2
+const OPACITY_MIN = 0
 const OPACITY_MAX = 1
+/** First-run default: most transparent but still visible (the slider can go down to 0). */
+const OPACITY_DEFAULT = 0.2
 
 /** Read panel position from localStorage; falls back to the default. */
 function loadPanelPos(): { x: number; y: number } {
@@ -73,15 +75,15 @@ function savePanelPos(pos: { x: number; y: number }): void {
   try { localStorage.setItem(STORE_POS_KEY, JSON.stringify(pos)) } catch { /* ignore */ }
 }
 
-/** Read panel opacity from localStorage; falls back to the most transparent state. */
+/** Read panel opacity from localStorage; falls back to the default (20%). */
 function loadPanelOpacity(): number {
   try {
     const raw = localStorage.getItem(STORE_OPACITY_KEY)
-    if (raw === null) return OPACITY_MIN
+    if (raw === null) return OPACITY_DEFAULT
     const value = Number(raw)
-    return Number.isFinite(value) && value >= OPACITY_MIN && value <= OPACITY_MAX ? value : OPACITY_MIN
+    return Number.isFinite(value) && value >= OPACITY_MIN && value <= OPACITY_MAX ? value : OPACITY_DEFAULT
   } catch {
-    return OPACITY_MIN
+    return OPACITY_DEFAULT
   }
 }
 
@@ -93,8 +95,8 @@ function savePanelOpacity(opacity: number): void {
 /**
  * Panel UI state persisted across open/close AND harness restarts: module
  * scope seeds from localStorage so the panel reopens where / at what opacity
- * the user left it, instead of resetting every time. Opacity defaults to the
- * most transparent state (20%, the slider minimum).
+ * the user left it, instead of resetting every time. Opacity defaults to 20%
+ * (most transparent but visible); the slider can go down to 0%.
  */
 let panelPos = loadPanelPos()
 let panelOpacity = loadPanelOpacity()
@@ -187,6 +189,9 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
   const [entries, setEntries] = useState<DirEntryJson[] | undefined>(undefined)
   const [error, setError] = useState<string | undefined>(undefined)
   const [openError, setOpenError] = useState<string | undefined>(undefined)
+  /** Hovered / pressed interactive element key (feedback state). */
+  const [hoverKey, setHoverKey] = useState<string | null>(null)
+  const [activeKey, setActiveKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [pos, setPos] = useState(panelPos)
   const [opacity, setOpacity] = useState(panelOpacity)
@@ -203,6 +208,33 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
     openDirectory(target).catch((reason: unknown) => {
       setOpenError(reason instanceof Error ? reason.message : String(reason))
     })
+  }
+
+  /**
+   * Hover-highlight alpha: shift the panel's background opacity by ±20% so the
+   * hovered clickable area stands out — brighter on transparent panels (≤50%),
+   * fainter on opaque ones (>50%); restoring on mouse leave.
+   */
+  const hoverAlpha = (): number => opacity <= 0.5 ? Math.min(1, opacity + 0.2) : Math.max(0, opacity - 0.2)
+
+  /** Pointer/mouse feedback handlers keyed per interactive element. */
+  const interactiveHandlers = (key: string) => ({
+    onMouseEnter: () => setHoverKey(key),
+    onMouseLeave: () => setHoverKey(null),
+    onPointerDown: () => setActiveKey(key),
+    onPointerUp: () => setActiveKey(null),
+    onPointerLeave: () => setActiveKey(null),
+  })
+
+  /** Hover highlight background + press-scale feedback for one element. */
+  const interactiveStyle = (key: string): React.CSSProperties => {
+    const hovered = hoverKey === key
+    const active = activeKey === key
+    return {
+      background: hovered ? `color-mix(in srgb, ${T.label} ${Math.round(hoverAlpha() * 100)}%, transparent)` : 'transparent',
+      transform: active ? 'scale(0.96)' : 'scale(1)',
+      transition: 'background 120ms ease, transform 90ms ease',
+    }
   }
 
   // Re-list whenever the visible directory changes while open.
@@ -329,7 +361,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
         >
           <input
             type="range"
-            min="20"
+            min="0"
             max="100"
             step="5"
             value={String(Math.round(opacity * 100))}
@@ -340,7 +372,16 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
           <button
             type="button"
             onClick={() => { panelStore.set(false) }}
-            style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: T.labelDim, fontSize: '13px', padding: '0 2px' }}
+            {...interactiveHandlers('close')}
+            style={{
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              color: hoverKey === 'close' ? T.label : T.labelDim,
+              fontSize: '13px',
+              padding: '0 2px',
+              ...interactiveStyle('close'),
+            }}
             aria-label="关闭"
           >
             ✕
@@ -360,7 +401,12 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
             title="在文件管理器中打开当前文件夹"
             aria-label="在文件管理器中打开"
             onClick={() => { if (visible !== undefined) onOpenDirectory(visible) }}
-            style={openBtn}
+            {...interactiveHandlers('open:root')}
+            style={{
+              ...openBtn,
+              ...interactiveStyle('open:root'),
+              color: hoverKey === 'open:root' ? T.label : T.labelDim,
+            }}
           >
             ↗
           </button>
@@ -380,7 +426,13 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
           {!loading && error === undefined && entries !== undefined && (
             <>
               {path !== undefined && (
-                <div role="button" tabIndex={0} onClick={() => { setPath(undefined) }} style={{ ...childRow, opacity: 0.7 }}>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  {...interactiveHandlers('up')}
+                  onClick={() => { setPath(undefined) }}
+                  style={{ ...childRow, opacity: 0.7, ...interactiveStyle('up') }}
+                >
                   <span style={{ flexShrink: 0 }}>↩</span>
                   <span>..</span>
                 </div>
@@ -391,8 +443,9 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
                   role="button"
                   tabIndex={0}
                   title={entry.name}
+                  {...interactiveHandlers(`d:${entry.name}`)}
                   onClick={() => { if (visible !== undefined) setPath(joinPath(visible, entry.name)) }}
-                  style={childRow}
+                  style={{ ...childRow, ...interactiveStyle(`d:${entry.name}`) }}
                 >
                   <span style={{ flexShrink: 0, display: 'inline-flex' }}><FolderIcon size={14} /></span>
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.name}</span>
@@ -401,11 +454,16 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
                     type="button"
                     title="在文件管理器中打开此文件夹"
                     aria-label="在文件管理器中打开"
+                    {...interactiveHandlers(`open:${entry.name}`)}
                     onClick={(e) => {
                       e.stopPropagation()
                       if (visible !== undefined) onOpenDirectory(joinPath(visible, entry.name))
                     }}
-                    style={openBtn}
+                    style={{
+                      ...openBtn,
+                      ...interactiveStyle(`open:${entry.name}`),
+                      color: hoverKey === `open:${entry.name}` ? T.label : T.labelDim,
+                    }}
                   >
                     ↗
                   </button>

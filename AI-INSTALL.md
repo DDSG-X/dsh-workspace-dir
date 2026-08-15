@@ -183,11 +183,19 @@ pnpm install
 
 ### 5. 面板 UI 状态持久化约定（位置 + 透明度）
 
-- 面板默认最透明（20%）、默认位置 `{x:272,y:64}`；拖动后的位置与滑杆透明度都应**跨 harness 重启记住**。
+- 面板默认透明度 20%（滑杆 **0%–100%**，0% 即完全透明背景）、默认位置 `{x:272,y:64}`；拖动后的位置与滑杆透明度都应**跨 harness 重启记住**。
 - 实现：localStorage 键 `dsw-workspace-dir:panelPos`（JSON `{x,y}`）与 `dsw-workspace-dir:panelOpacity`（数字）；
   模块加载时读入（`loadPanelPos`/`loadPanelOpacity`，带 try/catch——沙箱 iframe 可能禁用 localStorage，失败退回默认），
   拖动结束（`onPointerUp`）写回位置、滑杆 `onChange` 写回透明度；组件 state 用模块变量初始化。
 - 不要用组件内 `useState(默认值)` 初值（会每次重置）。
+
+### 5a. 可点击区域交互反馈约定（悬停高亮 + 按下缩放）
+
+- 悬停：可点击区域（目录行/↗/关闭）背景 = label 色 `hoverAlpha` 混合，`hoverAlpha = 面板透明度 ± 0.2`
+  （面板 ≤50% 时 +0.2 更明显，>50% 时 −0.2），`onMouseLeave` 恢复；不要用 CSS 文件，保持内联样式风格。
+- 按下：`transform: scale(0.96)` 视觉缩小、松开恢复（用缩放模拟"字体缩小放大"，避免字号变化引起布局跳动），
+  `transition: background 120ms ease, transform 90ms ease`。
+- 实现：组件内 `hoverKey`/`activeKey` 两个 state + `interactiveHandlers(key)`/`interactiveStyle(key)` 两个辅助函数，按元素 key 分发。
 
 ### 6. 打开系统文件夹:用官方 `host.openPath`,不要自己拼命令
 
@@ -441,15 +449,28 @@ Chinese path, migrate to an English directory before continuing.
 
 ### 5. Panel UI state persistence (position + opacity)
 
-- The panel opens at the most transparent state (20%) and the default
-  position `{x:272,y:64}`; the dragged position and slider opacity should
-  survive harness restarts.
+- The panel defaults to 20% opacity (slider **0%–100%**, 0% = fully
+  transparent background) and the default position `{x:272,y:64}`; the
+  dragged position and slider opacity should survive harness restarts.
 - Implementation: localStorage keys `dsw-workspace-dir:panelPos` (JSON
   `{x,y}`) and `dsw-workspace-dir:panelOpacity` (number); read them at module
   load with try/catch (sandboxed iframes may disable localStorage — fall back
   to defaults), write back on drag end (`onPointerUp`) / slider `onChange`,
   and initialize component state from the module variables. Never initialize
   from a component-local constant (it resets every time).
+
+### 5a. Clickable-area interaction feedback convention (hover highlight + press scale)
+
+- Hover: clickable areas (directory rows / ↗ / close) get a label-color
+  background at `hoverAlpha = panelOpacity ± 0.2` (+0.2 when the panel is
+  ≤50% so it stands out, −0.2 when >50%), restored on `onMouseLeave`; keep
+  the inline-style convention, no CSS files.
+- Press: `transform: scale(0.96)` on pointer down, restored on release
+  (scale simulates the "font shrink/grow" without layout jumps), with
+  `transition: background 120ms ease, transform 90ms ease`.
+- Implementation: `hoverKey`/`activeKey` state plus `interactiveHandlers(key)`
+  / `interactiveStyle(key)` helpers in the component, dispatched per element
+  key.
 
 ### 6. Opening a folder in the OS file manager: use the official `host.openPath`
 
