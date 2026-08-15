@@ -144,6 +144,22 @@ dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
 - 打开任意会话 → 标题旁出现 **"目录"** 按钮
 - 点击弹出目录面板;拖动标题栏移动;滑杆调透明度;`✕` 关闭
 
+### 终端命令速查(安装 / 更新 / 卸载)
+
+```sh
+# 安装(首次,一条命令装完即激活)
+dsh plugin --profile web add github:DDSG-X/dsh-workspace-dir
+
+# 更新(拉取仓库最新代码并触发 reconcile)
+dsh plugin --profile web update dsh-workspace-dir
+
+# 卸载(同时移除依赖和 dsh.profile.bundles 里的 bundle 层)
+dsh plugin --profile web remove dsh-workspace-dir
+
+# 快速验证(Host 半路由是否加载;返回 JSON 文件列表即正常)
+curl "http://127.0.0.1:3080/dsh-workspace-dir/list?path=<绝对路径>"
+```
+
 ### 更新插件
 
 ```sh
