@@ -26,18 +26,32 @@ interface PanelStore {
   subscribe: (fn: () => void) => () => void
 }
 
+/** localStorage key for panel open state (survives harness restarts). */
+const STORE_OPEN_KEY = 'dsw-workspace-dir:panelOpen'
+
+/** Read panel open state from localStorage; defaults to closed. */
+function loadPanelOpen(): boolean {
+  try { return localStorage.getItem(STORE_OPEN_KEY) === '1' } catch { return false }
+}
+
+/** Persist panel open state; failures are ignored. */
+function savePanelOpen(open: boolean): void {
+  try { localStorage.setItem(STORE_OPEN_KEY, open ? '1' : '0') } catch { /* ignore */ }
+}
+
 /**
  * Panel visibility store shared by the toggle button and the overlay panel.
  * Built through a closure factory: methods capture the `store` variable
  * instead of relying on `this`, so React's useSyncExternalStore can call
- * `subscribe(fn)` unbound without losing the listeners set.
+ * `subscribe(fn)` unbound without losing the listeners set. The open state
+ * is persisted to localStorage so the panel reopens the way the user left it.
  */
 function createPanelStore(): PanelStore {
   const store: PanelStore = {
-    open: false,
+    open: loadPanelOpen(),
     listeners: new Set(),
     get() { return store.open },
-    set(v) { store.open = v; for (const fn of store.listeners) fn() },
+    set(v) { store.open = v; savePanelOpen(v); for (const fn of store.listeners) fn() },
     toggle() { store.set(!store.open) },
     subscribe(fn) { store.listeners.add(fn); return () => { store.listeners.delete(fn) } },
   }

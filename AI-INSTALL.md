@@ -181,12 +181,12 @@ pnpm install
 - profile 的 `node_modules/dsh-workspace-dir` 若是 **junction**，pull 到新 lib 后刷新页面即生效
   （`clientModules` 按内容 hash 提供 bundle，自动更新 rev）；若是实体副本则需重新安装。
 
-### 5. 面板 UI 状态持久化约定（位置 + 透明度）
+### 5. 面板 UI 状态持久化约定（打开状态 + 位置 + 透明度）
 
-- 面板默认透明度 20%（滑杆 **0%–100%**，0% 即完全透明背景）、默认位置 `{x:272,y:64}`；拖动后的位置与滑杆透明度都应**跨 harness 重启记住**。
-- 实现：localStorage 键 `dsw-workspace-dir:panelPos`（JSON `{x,y}`）与 `dsw-workspace-dir:panelOpacity`（数字）；
-  模块加载时读入（`loadPanelPos`/`loadPanelOpacity`，带 try/catch——沙箱 iframe 可能禁用 localStorage，失败退回默认），
-  拖动结束（`onPointerUp`）写回位置、滑杆 `onChange` 写回透明度；组件 state 用模块变量初始化。
+- 面板打开/关闭状态、位置、透明度都应**跨 harness 重启记住**；默认透明度 20%（滑杆 **0%–100%**，0% 即完全透明背景）、默认位置 `{x:272,y:64}`、默认关闭。
+- 实现：localStorage 三个键——`dsw-workspace-dir:panelOpen`（`'1'`/`'0'`）、`dsw-workspace-dir:panelPos`（JSON `{x,y}`）、`dsw-workspace-dir:panelOpacity`（数字）；
+  模块加载时读入（`loadPanelOpen`/`loadPanelPos`/`loadPanelOpacity`，带 try/catch——沙箱 iframe 可能禁用 localStorage，失败退回默认）；
+  打开状态在 store 的 `set()` 里写回、位置在拖动结束（`onPointerUp`）写回、透明度在滑杆 `onChange` 写回；组件 state 用模块变量初始化。
 - 不要用组件内 `useState(默认值)` 初值（会每次重置）。
 
 ### 5a. 可点击区域交互反馈约定（悬停高亮 + 按下缩放）
@@ -447,17 +447,20 @@ Chinese path, migrate to an English directory before continuing.
   pull is enough (`clientModules` serves bundles by content hash and updates the rev
   automatically); if it is a real copy, re-install instead.
 
-### 5. Panel UI state persistence (position + opacity)
+### 5. Panel UI state persistence (open state + position + opacity)
 
-- The panel defaults to 20% opacity (slider **0%–100%**, 0% = fully
-  transparent background) and the default position `{x:272,y:64}`; the
-  dragged position and slider opacity should survive harness restarts.
-- Implementation: localStorage keys `dsw-workspace-dir:panelPos` (JSON
-  `{x,y}`) and `dsw-workspace-dir:panelOpacity` (number); read them at module
-  load with try/catch (sandboxed iframes may disable localStorage — fall back
-  to defaults), write back on drag end (`onPointerUp`) / slider `onChange`,
-  and initialize component state from the module variables. Never initialize
-  from a component-local constant (it resets every time).
+- The panel's open/closed state, position and opacity should survive harness
+  restarts; defaults: closed, 20% opacity (slider **0%–100%**, 0% = fully
+  transparent background), position `{x:272,y:64}`.
+- Implementation: three localStorage keys — `dsw-workspace-dir:panelOpen`
+  (`'1'`/`'0'`), `dsw-workspace-dir:panelPos` (JSON `{x,y}`) and
+  `dsw-workspace-dir:panelOpacity` (number); read at module load via
+  `loadPanelOpen`/`loadPanelPos`/`loadPanelOpacity` with try/catch
+  (sandboxed iframes may disable localStorage — fall back to defaults);
+  the open state is written back in the store's `set()`, the position on
+  drag end (`onPointerUp`), the opacity on slider `onChange`; component
+  state initializes from the module variables. Never initialize from a
+  component-local constant (it resets every time).
 
 ### 5a. Clickable-area interaction feedback convention (hover highlight + press scale)
 
