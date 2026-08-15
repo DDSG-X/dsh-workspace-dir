@@ -446,7 +446,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
           <div style={{ ...childRow, cursor: 'default', color: T.error }}>⚠ {openError}</div>
         )}
         {openNote !== undefined && (
-          <div style={{ ...childRow, cursor: 'default', color: T.labelDim }}>ℹ {openNote}</div>
+          <div style={{ ...childRow, cursor: 'default', color: T.labelDim, whiteSpace: 'normal' }}>ℹ {openNote}</div>
         )}
 
         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: '4px', paddingTop: '4px' }}>
