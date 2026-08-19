@@ -1,5 +1,7 @@
 # dsh-workspace-dir
 
+[![Awesome DSH Plugin](https://awesome-dsh-plugin.com/badge.svg)](https://github.com/awesome-dsh-plugin/awesome-dsh-plugin)
+
 一个 DeepSeek Harness 插件:在会话头部加一个 **"📁 目录"** 按钮,点一下就能弹出
 当前对话工作目录的**文件/子目录列表**——不用切出 harness,边写代码边看项目结构。
 
