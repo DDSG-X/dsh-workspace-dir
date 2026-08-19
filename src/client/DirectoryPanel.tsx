@@ -257,6 +257,15 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
 
   const visible = path ?? cwd
 
+  /** Map an openPath failure to a friendlier message for headless/WSL-like environments. */
+  const friendlyOpenError = (reason: unknown): string => {
+    const raw = reason instanceof Error ? reason.message : String(reason)
+    if (/ENOENT|xdg-open|spawn/i.test(raw)) {
+      return '当前环境没有可用的文件管理器（如 WSL 无桌面环境），无法在系统文件管理器中打开'
+    }
+    return raw
+  }
+
   /** Open a directory in the OS file manager; surface failures inline. */
   const onOpenDirectory = (target: string): void => {
     setOpenError(undefined)
@@ -266,7 +275,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
       if (openNoteTimerRef.current !== undefined) window.clearTimeout(openNoteTimerRef.current)
       openNoteTimerRef.current = window.setTimeout(() => setOpenNote(undefined), 5000)
     }).catch((reason: unknown) => {
-      setOpenError(reason instanceof Error ? reason.message : String(reason))
+      setOpenError(friendlyOpenError(reason))
     })
   }
 
@@ -503,7 +512,7 @@ export function DirectoryPanel(props: DirectoryPanelProps): React.ReactElement |
         </div>
 
         {openError !== undefined && (
-          <div style={{ ...childRow, cursor: 'default', color: T.error }}>⚠ {openError}</div>
+          <div style={{ ...childRow, cursor: 'default', color: T.error, whiteSpace: 'normal' }}>⚠ {openError}</div>
         )}
 
         <div style={{ borderTop: `1px solid ${T.border}`, marginTop: '4px', paddingTop: '4px' }}>
