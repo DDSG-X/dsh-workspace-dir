@@ -3,3 +3,6 @@ node_modules/
 .DS_Store
 交接文档.md
 交接日志.md
+
+# Plugin peer deps come from the harness install; a lockfile only adds noise.
+pnpm-lock.yaml
